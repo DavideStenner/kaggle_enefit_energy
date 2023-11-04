@@ -1,0 +1,14 @@
+numpy
+pandas
+matplotlib
+lightgbm
+tqdm
+plotly
+kaggle
+pyarrow
+polars
+seaborn
+shap
+IProgress
+ipywidgets
+xgboost>=2.0.0
