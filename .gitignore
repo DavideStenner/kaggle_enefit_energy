@@ -1,2 +1,5 @@
 __pycache__
 .venv
+data/original_data/*
+!data/original_data/
+enefit/*.egg-info/*

@@ -8,12 +8,31 @@ https://www.kaggle.com/competitions/predict-energy-behavior-of-prosumers
 # Set up data
 
 ```
-kaggle competitions download -c child-mind-institute-detect-sleep-states -p data/original_data
+kaggle competitions download -c predict-energy-behavior-of-prosumers -p data/original_data
 
 ```
 
-Then unzip
+Then unzip inside folder original_data
 
+Create the required environment by executing following command:
+```
+//create venv
+python -m venv .venv
+
+//activate .venv
+source .venv/Scripts/activate
+
+//upgrade pip
+python -m pip install --upgrade pip
+
+//instal package in editable mode
+python -m pip install -e .
+
+//clean egg-info artifact
+python setup.py clean
+```
+
+or simply execute install_all.bat
 # How To
 
 Run
