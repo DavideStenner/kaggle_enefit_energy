@@ -3,3 +3,6 @@ __pycache__
 data/original_data/*
 !data/original_data/
 enefit/*.egg-info/*
+test/*
+data/mapping/*
+!data/mapping/

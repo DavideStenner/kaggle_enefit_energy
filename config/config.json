@@ -1,4 +1,5 @@
 {
     "PATH_ORIGINAL_DATA": "data/original_data/predict-energy-behavior-of-prosumers",
-    "PATH_PARQUET_DATA": "dataset/parquet_dataset"
+    "PATH_PARQUET_DATA": "data/parquet_dataset",
+    "PATH_MAPPING_DATA": "data/mapping"
 }
