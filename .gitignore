@@ -8,3 +8,5 @@ data/mapping/*
 !data/mapping/
 data/parquet_dataset/*
 !data/parquet_dataset/
+!experiment/
+experiment/*
