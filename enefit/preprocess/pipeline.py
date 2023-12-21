@@ -1,11 +1,13 @@
+import os
 import gc
 
 from typing import Any
 
 from enefit.preprocess.import_data import EnefitImport
 from enefit.preprocess.add_feature import EnefitFeature
+from enefit.preprocess.cv_fold import EnefitFoldCreator
 
-class EnefitPipeline(EnefitImport, EnefitFeature):
+class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
 
     def __init__(self, config_dict: dict[str, Any], target_n_lags: int):
         
@@ -14,6 +16,15 @@ class EnefitPipeline(EnefitImport, EnefitFeature):
         EnefitImport.__init__(self, config_dict=config_dict)
         self.import_all()
     
+    def save_data(self) -> None:
+        print('saving processed dataset')
+        self.data.write_parquet(
+            os.path.join(
+                self.config_dict['PATH_PARQUET_DATA'],
+                'data.parquet'
+            )
+        )
+        
     def __call__(self) -> None:
         _ = gc.collect()
         
@@ -31,3 +42,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature):
         print('Collecting....')
         self.data = self.data.collect()
         _ = gc.collect()
+        
+        print('Creating fold_info column ...')
+        self.create_fold()
+        self.save_data()
