@@ -140,8 +140,9 @@ class EnefitFeature():
         ).lazy()
 
     def create_train_feature(self) -> None:
+        grouped_col_list: list[str] = ['data_block_id', 'prediction_unit_id', 'is_consumption']
+        
         self.train_data = self.train_data.with_columns(
-            pl.col('datetime').cast(pl.Date).alias('date'),
             pl.col('datetime').dt.year().cast(pl.UInt16).alias('year'),
             pl.col('datetime').dt.quarter().cast(pl.UInt8).alias('quarter'),
             pl.col('datetime').dt.month().cast(pl.UInt8).alias('month'),
@@ -152,11 +153,52 @@ class EnefitFeature():
             pl.col('datetime').dt.ordinal_day().cast(pl.UInt16).alias('ordinal_day'),
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
         )
-
-        #put revealed lag
-        #PLACEHOLDER
-        print('to add revealed target lag')
         
+        #calculate avg target      
+        revealed_targets_avg = (
+            self.train_data.select(
+                grouped_col_list + ['target']
+            ).group_by(grouped_col_list)
+            .agg(
+                pl.col('target').mean().cast(pl.Float32)
+            )
+        )
+        #create full dataset so shift is correct
+        full_revealed_targets = (
+            revealed_targets_avg.select('data_block_id').unique()
+            .join(
+                revealed_targets_avg.select('prediction_unit_id').unique(),
+                how = 'cross'
+            )
+            .join(
+                revealed_targets_avg.select('is_consumption').unique(),
+                how='cross'
+            )
+        ).sort(grouped_col_list[::-1], descending=False)
+        
+        full_revealed_targets = full_revealed_targets.join(
+            revealed_targets_avg,
+            on=grouped_col_list,
+            how='left'
+        )
+        #add multiple target now
+        full_revealed_targets = full_revealed_targets.with_columns(
+            (
+                (
+                    pl.col('target').shift(lag_)
+                    .cast(pl.Float32).alias(f'target_lag_{lag_}')
+                )
+                for lag_ in range(2, self.target_n_lags+1)
+            )
+        ).drop('target')
+
+        self.train_data = self.train_data.join(
+            full_revealed_targets, 
+            how='left', 
+            left_on = grouped_col_list,
+            right_on = grouped_col_list
+        )
+    
     def merge_all(self) -> None:
         n_rows_begin = self.train_data.select(pl.count()).collect().item()
 

@@ -7,7 +7,9 @@ from enefit.preprocess.add_feature import EnefitFeature
 
 class EnefitPipeline(EnefitImport, EnefitFeature):
 
-    def __init__(self, config_dict: dict[str, Any]):
+    def __init__(self, config_dict: dict[str, Any], target_n_lags: int):
+        
+        self.target_n_lags = target_n_lags
         
         EnefitImport.__init__(self, config_dict=config_dict)
         self.import_all()
