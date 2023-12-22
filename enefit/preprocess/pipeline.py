@@ -6,14 +6,13 @@ from typing import Any
 from enefit.preprocess.import_data import EnefitImport
 from enefit.preprocess.add_feature import EnefitFeature
 from enefit.preprocess.cv_fold import EnefitFoldCreator
+from enefit.preprocess.initialization import EnefitInit
 
 class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
 
     def __init__(self, config_dict: dict[str, Any], target_n_lags: int):
-        
-        self.target_n_lags = target_n_lags
-        
-        EnefitImport.__init__(self, config_dict=config_dict)
+                
+        EnefitInit.__init__(self, config_dict=config_dict, target_n_lags=target_n_lags)
         self.import_all()
     
     def save_data(self) -> None:

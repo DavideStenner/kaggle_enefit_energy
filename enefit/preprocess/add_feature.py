@@ -1,6 +1,7 @@
 import polars as pl
+from enefit.preprocess.initialization import EnefitInit
 
-class EnefitFeature():
+class EnefitFeature(EnefitInit):
     
     def create_client_feature(self) -> None:
         #add new column

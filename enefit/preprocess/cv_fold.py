@@ -4,6 +4,7 @@ import numpy as np
 import polars as pl
 
 from typing import Iterator, Tuple
+from enefit.preprocess.initialization import EnefitInit
 
 def get_time_series_cross_val_splits(
     data: pd.DataFrame, time_col: str, num_fold: int, 
@@ -101,7 +102,7 @@ def get_fold(
         ]
     return fold_split
 
-class EnefitFoldCreator():
+class EnefitFoldCreator(EnefitInit):
     def create_fold(self):
 
         fold_split = get_fold(self.data.to_pandas(), time_col='data_block_id', return_index=False)

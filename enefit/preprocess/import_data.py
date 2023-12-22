@@ -2,13 +2,9 @@ import os
 import polars as pl
 
 from typing import Any
+from enefit.preprocess.initialization import EnefitInit
 
-
-class EnefitImport():
-    def __init__(self, config_dict: dict[str, Any]):         
-        self.path_original_data: str = config_dict['PATH_ORIGINAL_DATA']
-        self.config_dict: dict[str, Any] = config_dict
-    
+class EnefitImport(EnefitInit):    
     def scan_all_dataset(self) -> None:
         
         self.location_data: pl.LazyFrame = pl.scan_csv(
