@@ -10,3 +10,4 @@ data/parquet_dataset/*
 !data/parquet_dataset/
 !experiment/
 experiment/*
+config/params_*.json
