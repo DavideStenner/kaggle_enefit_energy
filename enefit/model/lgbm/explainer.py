@@ -5,7 +5,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-class LgbmExplainer():       
+from enefit.model.lgbm.initialization import LgbmInit
+
+class LgbmExplainer(LgbmInit):       
     def evaluate_score(self) -> None:        
         # Find best epoch
         with open(
@@ -90,7 +92,3 @@ class LgbmExplainer():
             os.path.join(self.experiment_path, 'importance_plot.png')
         )
         plt.close(fig)
-        
-    def explain_model(self) -> None:
-        self.evaluate_score()
-        self.get_feature_importance()
