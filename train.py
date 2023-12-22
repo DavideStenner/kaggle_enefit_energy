@@ -1,10 +1,9 @@
 if __name__=='__main__':
     from enefit.utils.import_utils import import_config
-    from enefit.training.lgbm import LgbmTrainer
+    from enefit.model.lgbm import ModelPipeline
 
     config_dict = import_config()
-
-    trainer = LgbmTrainer(
+    trainer = ModelPipeline(
         experiment_name='test',
         params_lgb={
             "boosting_type": "gbdt",
