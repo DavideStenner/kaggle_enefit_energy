@@ -11,3 +11,5 @@ data/parquet_dataset/*
 !experiment/
 experiment/*
 config/params_*.json
+eda/*
+!eda/
