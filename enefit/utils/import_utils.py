@@ -1,12 +1,12 @@
 import os
 import json
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
-def import_params(model: str, params_path: str='config/params_{model}.json') -> Dict[str, Any]:
+def import_params(model: str, params_path: str='config/params_{model}.json') -> Tuple[Dict[str, Any], str]:
     with open(params_path.format(model=model)) as params_file:
         params = json.load(params_file)
-    return params
+    return params['params'], params['experiment_name']
 
 def import_config(config_path: str='config/config.json') -> Dict[str, Any]:
     with open(config_path) as config_file:

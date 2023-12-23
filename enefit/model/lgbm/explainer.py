@@ -47,7 +47,7 @@ class LgbmExplainer(LgbmInit):
             best_epoch_lgb, f"std_{self.metric_eval}"
         ]
 
-        print(f'Best epoch: {best_epoch_lgb}, CV-Auc: {best_score_lgb:.5f} ± {lgb_std:.5f}')
+        print(f'Best epoch: {best_epoch_lgb}, CV-L1: {best_score_lgb:.5f} ± {lgb_std:.5f}')
 
         self.best_result = {
             'best_epoch': best_epoch_lgb+1,
