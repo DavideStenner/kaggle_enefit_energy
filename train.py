@@ -3,11 +3,12 @@ if __name__=='__main__':
     from enefit.model.lgbm import ModelPipeline
 
     config_dict = import_config()
-    params_model = import_params()
+    params_model = import_params(model='lgb')
     
     trainer = ModelPipeline(
         experiment_name='test',
         params_lgb=params_model,
-        config_dict=config_dict
+        config_dict=config_dict,
+        metric_eval='l1'
     )
-    trainer.train()
+    trainer()

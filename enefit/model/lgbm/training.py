@@ -75,7 +75,6 @@ class LgbmTrainer(LgbmInit):
             del train_matrix, test_matrix
             
             _ = gc.collect()
-            self.save_model()
 
     def save_model(self)->None:
         with open(
