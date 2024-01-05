@@ -1,4 +1,6 @@
 import polars as pl
+import holidays
+
 from enefit.preprocess.initialization import EnefitInit
 
 class EnefitFeature(EnefitInit):
@@ -158,6 +160,26 @@ class EnefitFeature(EnefitInit):
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
         )
         
+        #capture every holiday
+        min_year = self.train_data.select('year').min().collect().item()
+        max_year = self.train_data.select('year').max().collect().item()
+        
+        estonian_holidays = list(
+            holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
+        )
+
+        #add holiday as a dummy 0, 1 variable
+        self.train_data = self.train_data.with_columns(
+            pl.col('datetime').dt.date().alias('date').cast(pl.Date)
+        ).with_columns(
+            pl.when(
+                pl.col('date')
+                .is_in(estonian_holidays)
+            ).then(pl.lit(1))
+            .otherwise(pl.lit(0))
+            .cast(pl.UInt8).alias('holiday')
+        ).drop('date')
+
         #calculate target -> data_block_id, prediction_unit_id, is_consumption is row key
         #useless aggregation used only to ensure no duplicates
         revealed_targets_avg = (
