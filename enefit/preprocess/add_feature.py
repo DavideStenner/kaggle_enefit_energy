@@ -155,7 +155,8 @@ class EnefitFeature(EnefitInit):
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
         )
         
-        #calculate avg target      
+        #calculate target -> data_block_id, prediction_unit_id, is_consumption is row key
+        #useless aggregation used only to ensure no duplicates
         revealed_targets_avg = (
             self.train_data.select(
                 grouped_col_list + ['target']
