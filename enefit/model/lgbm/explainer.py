@@ -5,9 +5,33 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from typing import Union
 from enefit.model.lgbm.initialization import LgbmInit
 
 class LgbmExplainer(LgbmInit):       
+    def plot_train_curve(self, progress_df: pd.DataFrame, variable_to_plot: Union[str, list], name_plot: str, best_epoch_lgb:int) -> None:
+        
+        if isinstance(variable_to_plot, str):
+            variable_to_plot = [variable_to_plot]
+                        
+        fig = plt.figure(figsize=(12,8))
+        sns.lineplot(
+            data=progress_df[['time'] + variable_to_plot].melt(
+                id_vars='time',
+                value_vars=variable_to_plot,
+                var_name='metric_fold', value_name=self.metric_eval
+            ), 
+            x="time", y=self.metric_eval, hue='metric_fold'
+        )
+        plt.axvline(x=best_epoch_lgb, color='blue', linestyle='--')
+
+        plt.title(f"Training plot curve of {self.metric_eval}")
+
+        fig.savefig(
+            os.path.join(self.experiment_path, f'{name_plot}.png')
+        )
+        plt.close(fig)
+
     def evaluate_score(self) -> None:        
         # Find best epoch
         with open(
@@ -53,7 +77,26 @@ class LgbmExplainer(LgbmInit):
             'best_epoch': best_epoch_lgb+1,
             'best_score': best_score_lgb
         }
-
+        #plot cv score
+        self.plot_train_curve(
+            progress_df=progress_df, 
+            variable_to_plot=f'average_{self.metric_eval}', name_plot='average_training_curve', 
+            best_epoch_lgb=best_epoch_lgb
+        )
+        #plot std score
+        self.plot_train_curve(
+            progress_df=progress_df, 
+            variable_to_plot=f'std_{self.metric_eval}', name_plot='std_training_curve', 
+            best_epoch_lgb=best_epoch_lgb
+        )
+        #plot every fold score
+        self.plot_train_curve(
+            progress_df=progress_df, 
+            variable_to_plot=[f'{self.metric_eval}_fold_{x}' for x in range(self.n_fold)], 
+            name_plot='training_curve_by_fold', 
+            best_epoch_lgb=best_epoch_lgb
+        )
+        
         with open(
             os.path.join(
                 self.experiment_path,
