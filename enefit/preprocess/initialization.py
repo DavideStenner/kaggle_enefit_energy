@@ -3,7 +3,7 @@ from typing import Any
 class EnefitInit():
     def __init__(self, 
             config_dict: dict[str, Any], target_n_lags: int, 
-            agg_target_n_lags: list[int] = [2, 3, 7, 15], embarko_skip: int=60
+            agg_target_n_lags: list[int], embarko_skip: int
         ):
         
         self.target_n_lags: int = target_n_lags

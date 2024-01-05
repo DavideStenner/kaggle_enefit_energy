@@ -4,5 +4,9 @@ if __name__=='__main__':
 
     config_dict = import_config()
     
-    enefit_preprocessor = PreprocessPipeline(config_dict=config_dict, target_n_lags=15)
+    enefit_preprocessor = PreprocessPipeline(
+        config_dict=config_dict, 
+        target_n_lags=15, agg_target_n_lags=[2, 3, 7, 15], 
+        embarko_skip=60
+    )
     enefit_preprocessor()

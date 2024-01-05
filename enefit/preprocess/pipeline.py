@@ -10,9 +10,14 @@ from enefit.preprocess.initialization import EnefitInit
 
 class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
 
-    def __init__(self, config_dict: dict[str, Any], target_n_lags: int):
+    def __init__(self, config_dict: dict[str, Any], target_n_lags: int, agg_target_n_lags: int, embarko_skip: int):
                 
-        EnefitInit.__init__(self, config_dict=config_dict, target_n_lags=target_n_lags)
+        EnefitInit.__init__(
+            self, 
+            config_dict=config_dict, 
+            target_n_lags=target_n_lags, agg_target_n_lags=agg_target_n_lags, 
+            embarko_skip=embarko_skip
+        )
         self.import_all()
     
     def save_data(self) -> None:
