@@ -7,4 +7,5 @@ class EnefitInit():
         self.agg_target_n_lags: int = agg_target_n_lags
         self.path_original_data: str = config_dict['PATH_ORIGINAL_DATA']
         self.config_dict: dict[str, Any] = config_dict
-
+        self.embarko_skip: int = 90
+        self.n_folds: int = config_dict['N_FOLD']

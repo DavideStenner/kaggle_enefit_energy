@@ -76,8 +76,8 @@ def get_time_series_cross_val_splits(
 
 def get_fold(
         data: pd.DataFrame, time_col: str,
-        embargo: int = 60, 
-        num_fold: int = 5, 
+        embargo: int, 
+        num_fold: int, 
         min_time_to_use: int = 0, 
         percent_split: bool=True, 
         return_index: bool=True
@@ -105,7 +105,10 @@ def get_fold(
 class EnefitFoldCreator(EnefitInit):
     def create_fold(self):
 
-        fold_split = get_fold(self.data.to_pandas(), time_col='data_block_id', return_index=False)
+        fold_split = get_fold(
+            self.data.to_pandas(), time_col='data_block_id', embargo=self.embarko_skip,
+            num_fold=self.n_folds, return_index=False
+        )
         self.data = self.data.with_columns(
             (
                 (
