@@ -36,5 +36,5 @@ or simply execute install_all.bat
 # How To
 
 Run
-- preprocess.py to create traning dataset
-- train.py --train to train a lgbm with classification setup
+- enefit/preprocess.py to create traning dataset
+- enefit/train.py to train a lgbm with classification setup
