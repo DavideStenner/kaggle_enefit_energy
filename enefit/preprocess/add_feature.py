@@ -164,6 +164,10 @@ class EnefitFeature(EnefitInit):
         min_year = self.train_data.select('year').min().collect().item()
         max_year = self.train_data.select('year').max().collect().item()
         
+        #get min block day, max block day to create full dataset
+        min_block_day = self.train_data.select('data_block_id').min().collect().item()
+        max_block_day = self.train_data.select('data_block_id').max().collect().item()
+        
         estonian_holidays = list(
             holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
         )
@@ -192,13 +196,18 @@ class EnefitFeature(EnefitInit):
         )
         #create full dataset so shift is correct
         full_revealed_targets = (
-            revealed_targets_avg.select('data_block_id').unique()
+            #ensure that every data block id is inserted -> no lag error
+            pl.LazyFrame(
+                pl.arange(min_block_day, max_block_day, eager=True)
+                .cast(pl.UInt16)
+                .alias('data_block_id')
+            )
             .join(
-                revealed_targets_avg.select('prediction_unit_id').unique(),
+                self.train_data.select('prediction_unit_id').unique(),
                 how = 'cross'
             )
             .join(
-                revealed_targets_avg.select('is_consumption').unique(),
+                self.train_data.select('is_consumption').unique(),
                 how='cross'
             )
             #add detail over county, is_business, product_type used to join aggregation
@@ -230,6 +239,7 @@ class EnefitFeature(EnefitInit):
             #add date and is consumption to calculate aggregation by col
             join_col_list = ['data_block_id', 'is_consumption'] + filter_col_for_agg
             
+            #add target averaged over ...
             agg_revealed_targets_avg = (
                 self.train_data.select(
                     join_col_list + ['target']
