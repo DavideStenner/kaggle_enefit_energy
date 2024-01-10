@@ -22,7 +22,7 @@ class LgbmInit():
         self.fold_name: str = fold_name
         self.useless_col_list: list[str] = [
             'datetime',
-            'data_block_id',
+            'data_block_id', 'prediction_unit_id',
             'row_id', 'current_fold'
         ]
         self.log_evaluation: int = log_evaluation
