@@ -207,7 +207,7 @@ class EnefitFeature(EnefitInit):
                 self.train_data.select(['prediction_unit_id'] + agg_by_list).unique(),
                 how='left', on='prediction_unit_id'
             )
-        ).sort(grouped_col_list[::-1], descending=False)
+        ).sort(['is_consumption', 'prediction_unit_id', 'data_block_id'], descending=False)
         
         full_revealed_targets = full_revealed_targets.join(
             revealed_targets_avg,
