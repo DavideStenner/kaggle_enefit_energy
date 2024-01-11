@@ -154,7 +154,15 @@ class EnefitImport(EnefitInit):
                 pl.col('prediction_unit_id').cast(pl.UInt8)
             )
         )
-
+    def memorize_schema(self) -> None:
+        self.client_schema = self.client_data.schema
+        self.electricity_schema = self.electricity_data.schema
+        self.forecast_weather_schema = self.forecast_weather_data.schema
+        self.gas_schema = self.gas_data.schema
+        self.historical_weather_schema = self.historical_weather_data.schema
+        self.location_schema = self.location_data.schema
+        self.train_schema = self.train_data.schema
+        
     def import_all(self) -> None:
         self.scan_all_dataset()
         
@@ -165,3 +173,5 @@ class EnefitImport(EnefitInit):
         self.downcast_historical_weather_data()
         self.downcast_location()
         self.downcast_train()
+        
+        self.memorize_schema()
