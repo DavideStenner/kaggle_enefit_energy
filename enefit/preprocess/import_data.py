@@ -1,7 +1,7 @@
 import os
 import polars as pl
 
-from typing import Any
+from typing import Dict, OrderedDict, Union
 from enefit.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
@@ -13,34 +13,34 @@ class EnefitImport(EnefitInit):
             )
         )
         
-        self.client_data : pl.LazyFrame = pl.scan_csv(
+        self.starting_client_data : pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'client.csv'
             )
         )
-        self.train_data: pl.LazyFrame = pl.scan_csv(
+        self.starting_train_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'train.csv'
             )
         )
 
-        self.electricity_data: pl.LazyFrame = pl.scan_csv(
+        self.starting_electricity_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 
                 'electricity_prices.csv'
             )
         )
-        self.gas_data: pl.LazyFrame = pl.scan_csv(
+        self.starting_gas_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'gas_prices.csv'
             )
         )
-        self.forecast_weather_data: pl.LazyFrame = pl.scan_csv(
+        self.starting_forecast_weather_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'forecast_weather.csv'
             )
         )
-        self.historical_weather_data: pl.LazyFrame = pl.scan_csv(
+        self.starting_historical_weather_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'historical_weather.csv'
             )
@@ -48,7 +48,7 @@ class EnefitImport(EnefitInit):
         
     #CLIENT
     def downcast_client(self) -> None:
-        self.client_data = self.client_data.with_columns(
+        self.starting_client_data = self.starting_client_data.with_columns(
             pl.col('product_type').cast(pl.UInt8),
             pl.col('county').cast(pl.UInt8),
             pl.col('eic_count').cast(pl.UInt16),
@@ -60,7 +60,7 @@ class EnefitImport(EnefitInit):
 
     #GAS
     def downcast_gas_data(self) -> None:
-        self.gas_data = self.gas_data.with_columns(
+        self.starting_gas_data = self.starting_gas_data.with_columns(
             pl.col('forecast_date').cast(pl.Date),
             pl.col('lowest_price_per_mwh').cast(pl.Float32),
             pl.col('highest_price_per_mwh').cast(pl.Float32),
@@ -70,7 +70,7 @@ class EnefitImport(EnefitInit):
 
     #ELECTRICITY
     def downcast_electricity(self) -> None:
-        self.electricity_data = self.electricity_data.with_columns(
+        self.starting_electricity_data = self.starting_electricity_data.with_columns(
             (
                 pl.col('forecast_date').str.to_datetime(),
                 pl.col('euros_per_mwh').cast(pl.Float32),
@@ -90,7 +90,7 @@ class EnefitImport(EnefitInit):
     #FORECAST WEATHER
     def downcast_forecast_weather_data(self) -> None:
         #downcast data
-        self.forecast_weather_data = self.forecast_weather_data.with_columns(
+        self.starting_forecast_weather_data = self.starting_forecast_weather_data.with_columns(
             (
                 pl.col('latitude').cast(pl.Float32),
                 pl.col('longitude').cast(pl.Float32),
@@ -116,7 +116,7 @@ class EnefitImport(EnefitInit):
     #FORECAST WEATHER
     def downcast_historical_weather_data(self) -> None:        
         #downcast data
-        self.historical_weather_data = self.historical_weather_data.with_columns(
+        self.starting_historical_weather_data = self.starting_historical_weather_data.with_columns(
             (
                 pl.col('datetime').str.to_datetime(),
                 pl.col('temperature').cast(pl.Float32),
@@ -141,7 +141,7 @@ class EnefitImport(EnefitInit):
         
     #TRAIN
     def downcast_train(self) -> None:
-        self.train_data = self.train_data.with_columns(
+        self.starting_train_data = self.starting_train_data.with_columns(
             (
                 pl.col('county').cast(pl.UInt8),
                 pl.col('is_business').cast(pl.UInt8),
@@ -154,15 +154,39 @@ class EnefitImport(EnefitInit):
                 pl.col('prediction_unit_id').cast(pl.UInt8)
             )
         )
-    def memorize_schema(self) -> None:
-        self.client_schema = self.client_data.schema
-        self.electricity_schema = self.electricity_data.schema
-        self.forecast_weather_schema = self.forecast_weather_data.schema
-        self.gas_schema = self.gas_data.schema
-        self.historical_weather_schema = self.historical_weather_data.schema
-        self.location_schema = self.location_data.schema
-        self.train_schema = self.train_data.schema
-        
+
+    def memorize_starting_dataset_info(self) -> None:
+        self.starting_dataset_schema_dict: Dict[str, Dict[str, Union[OrderedDict, list[str]]]] = {
+            'client': {
+                'col': self.starting_client_data.columns,
+                'schema': self.starting_client_data.schema
+            },
+            'electricity': {
+                'col': self.starting_electricity_data.columns,
+                'schema': self.starting_electricity_data.schema
+            },
+            'forecast_weather': {
+                'col': self.starting_forecast_weather_data.columns,
+                'schema': self.starting_forecast_weather_data.schema
+            },
+            'gas': {
+                'col': self.starting_gas_data.columns,
+                'schema': self.starting_gas_data.schema
+            },
+            'historical_weather': {
+                'col': self.starting_historical_weather_data.columns,
+                'schema': self.starting_historical_weather_data.schema
+            },
+            'location': {
+                'col': self.location_data.columns,
+                'schema': self.location_data.schema
+            },
+            'train': {
+                'col': self.train_data.columns,
+                'schema': self.train_data.schema
+            }
+        }
+    
     def import_all(self) -> None:
         self.scan_all_dataset()
         
@@ -174,4 +198,4 @@ class EnefitImport(EnefitInit):
         self.downcast_location()
         self.downcast_train()
         
-        self.memorize_schema()
+        self.memorize_starting_dataset_info()

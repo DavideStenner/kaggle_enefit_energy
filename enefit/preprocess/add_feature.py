@@ -5,6 +5,16 @@ from enefit.preprocess.initialization import EnefitInit
 
 class EnefitFeature(EnefitInit):
     
+    def copy_starting_dataset(self) -> None:
+        #keep starting dataset without modification -> used during inference to update it
+        self.client_data = self.starting_client_data
+        self.gas_data = self.starting_gas_data
+        self.electricity_data = self.starting_electricity_data
+        self.forecast_weather_data = self.starting_forecast_weather_data
+        self.historical_weather_data = self.starting_historical_weather_data
+        self.train_data = self.starting_train_data
+        
+        
     def create_client_feature(self) -> None:
         #add new column
         self.client_data = self.client_data.with_columns(

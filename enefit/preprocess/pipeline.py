@@ -19,7 +19,8 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
             embarko_skip=embarko_skip
         )
         self.import_all()
-    
+        self.inference: bool = False
+        
     def save_data(self) -> None:
         print('saving processed dataset')
         self.data.write_parquet(
@@ -28,11 +29,10 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
                 'data.parquet'
             )
         )
-        
-    def __call__(self) -> None:
+    def create_feature(self) -> None:
         _ = gc.collect()
+        self.copy_starting_dataset()
         
-        print('Creating Feature')
         self.create_client_feature()
         self.create_electricity_feature()
         self.create_forecast_weather_feature()
@@ -40,7 +40,12 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.create_historical_weather_feature()
         self.create_train_feature()
         
-        print('Merging everything')
+    def preprocess_inference(self) -> None:
+        self.create_feature()
+        self.merge_all()
+        
+    def preprocess_train(self) -> None:
+        self.create_feature()
         self.merge_all()
         
         print('Collecting....')
@@ -50,3 +55,27 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         print('Creating fold_info column ...')
         self.create_fold()
         self.save_data()
+    
+    def collect_all(self) -> None:
+        self.location_data = self.location_data.collect()
+        self.starting_client_data = self.starting_client_data.collect()
+        self.starting_electricity_data = self.starting_electricity_data.collect()
+        self.starting_forecast_weather_data = self.starting_forecast_weather_data.collect()
+        self.starting_gas_data = self.starting_gas_data.collect()
+        self.starting_historical_weather_data = self.starting_historical_weather_data.collect()
+        self.starting_train_data = self.starting_train_data.collect()
+        
+    def begin_inference(self) -> None:
+        #reset data
+        self.data = None
+        self.inference: bool = True
+        
+        self.import_all()
+        self.collect_all()
+        self.create_feature()
+        
+    def __call__(self) -> None:
+        if self.inference:
+            self.preprocess_inference()
+        else:
+            self.preprocess_train()
