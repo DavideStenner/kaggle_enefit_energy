@@ -103,22 +103,22 @@ def get_fold(
     return fold_split
 
 class EnefitFoldCreator(EnefitInit):
-    def create_fold(self):
-
+    def create_fold(self):        
         fold_split = get_fold(
-            self.data.to_pandas(), time_col='data_block_id', embargo=self.embarko_skip,
+            self.data.to_pandas(), time_col=self.fold_time_col, 
+            embargo=self.embarko_skip,
             num_fold=self.n_folds, return_index=False
         )
         self.data = self.data.with_columns(
             (
                 (
                     pl.when(
-                        pl.col('data_block_id')
+                        pl.col(self.fold_time_col)
                         .is_in(fold_split[fold_][0])
                     )
                     .then(pl.lit('t'))
                     .when(
-                        pl.col('data_block_id')
+                        pl.col(self.fold_time_col)
                         .is_in(fold_split[fold_][1])
                     ).then(pl.lit('v')).otherwise(pl.lit('n'))
                     .alias(f'fold_{fold_}')

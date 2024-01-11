@@ -21,7 +21,7 @@ class LgbmInit():
         self.target_col_name: str = config_dict['TARGET_COL']
         self.fold_name: str = fold_name
         self.useless_col_list: list[str] = [
-            'datetime',
+            'datetime', 'date', 'date_order_kfold',
             'data_block_id', 'prediction_unit_id',
             'row_id', 'current_fold'
         ]

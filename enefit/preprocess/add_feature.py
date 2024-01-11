@@ -18,6 +18,8 @@ class EnefitFeature(EnefitInit):
     def create_client_feature(self) -> None:
         #add new column
         self.client_data = self.client_data.with_columns(
+            #clean date column
+            (pl.col("date") + pl.duration(days=2)).cast(pl.Date),
             (
                 pl.col('eic_count').mean()
                 .over(['product_type', 'county', 'is_business'])
@@ -31,11 +33,14 @@ class EnefitFeature(EnefitInit):
                 .alias('installed_capacity_mean')
             )
         )
-        #data not needed during merging
-        self.client_data = self.client_data.drop(['date'])
         
     def create_gas_feature(self) -> None:
         self.gas_data = self.gas_data.with_columns(
+            (
+                (pl.col('forecast_date') + pl.duration(days=1))
+                .dt.date().alias('date')
+                .cast(pl.Date)
+            ),
             (
                 (
                     pl.col('lowest_price_per_mwh') + 
@@ -47,14 +52,21 @@ class EnefitFeature(EnefitInit):
                 pl.col('lowest_price_per_mwh')
             ).alias('range_price_per_mwh').cast(pl.Float32)
         )
-        self.gas_data = self.gas_data.drop(['origin_date', 'forecast_date'])
+        self.gas_data = self.gas_data.drop(['forecast_date'])
         
     def create_electricity_feature(self) -> None:
+        self.electricity_data = self.electricity_data.with_columns(
+            (pl.col("forecast_date") + pl.duration(days=1)).alias('datetime')
+        )
         #not needed during merge
-        self.electricity_data = self.electricity_data.drop('origin_date')
+        self.electricity_data = self.electricity_data.drop('forecast_date')
             
     def create_forecast_weather_feature(self) -> None:
-        
+        #add date which is a key
+        self.forecast_weather_data = self.forecast_weather_data.with_columns(
+            (pl.col('origin_datetime') + pl.duration(days=1)).cast(pl.Date).alias('date')
+        )
+
         training_variable: list[str] = [
             'temperature', 'dewpoint', 
             'cloudcover_high', 'cloudcover_low', 
@@ -66,7 +78,7 @@ class EnefitFeature(EnefitInit):
             'snowfall', 'total_precipitation'
         ]
         index_variable: list[str] = [
-            'county', 'origin_datetime', 'data_block_id'
+            'county', 'date'
         ]
     
         #add county
@@ -93,13 +105,25 @@ class EnefitFeature(EnefitInit):
         )
         
         
-        #pivot everything to get future weather data
+        #pivot everything to get future weather data -> collect not working for pivot 
         self.forecast_weather_data = self.forecast_weather_data.collect().pivot(
             values=training_variable, 
             index=index_variable, columns='hours_ahead'
         ).lazy()
         
     def create_historical_weather_feature(self) -> None:
+        #add date which is a key
+        self.historical_weather_data = self.historical_weather_data.with_columns(
+            (
+                pl.when(
+                    pl.col('datetime').dt.hour()<11
+                ).then(
+                    pl.col('datetime') + pl.duration(days=1)
+                ).otherwise(
+                    pl.col('datetime') + pl.duration(days=2)
+                )
+            ).cast(pl.Date).alias('date')
+        )
         training_variable: list[str] = [
             'temperature', 'dewpoint', 'rain',
             'snowfall', 'surface_pressure', 'cloudcover_total',
@@ -109,7 +133,7 @@ class EnefitFeature(EnefitInit):
             'direct_solar_radiation', 'diffuse_radiation'
         ]
         index_variable: list[str] = [
-            'county', 'data_block_id'
+            'county', 'date'
         ]
         
         #add county
@@ -122,12 +146,12 @@ class EnefitFeature(EnefitInit):
         self.historical_weather_data = (
             self.historical_weather_data
             .sort(
-                ['latitude', 'longitude', 'data_block_id', 'datetime'],
+                ['latitude', 'longitude', 'date', 'datetime'],
                 descending=[False, False, False, True]
             )
             .with_columns(
                 pl.arange(0, pl.count())
-                .over(['latitude', 'longitude', 'data_block_id'])
+                .over(['latitude', 'longitude', 'date'])
                 .cast(pl.UInt8).alias('hours_ago')
             )
         )
@@ -146,7 +170,8 @@ class EnefitFeature(EnefitInit):
                 ]
             )
         )
-
+        
+        #pivot everything to get future weather data -> collect not working for pivot 
         self.historical_weather_data = self.historical_weather_data.collect().pivot(
             values=training_variable, 
             index=index_variable, columns='hours_ago'
@@ -155,10 +180,11 @@ class EnefitFeature(EnefitInit):
     def create_train_feature(self) -> None:
         original_num_rows = self.train_data.select(pl.count()).collect().item()
         
-        grouped_col_list: list[str] = ['data_block_id', 'prediction_unit_id', 'is_consumption']
+        grouped_col_list: list[str] = ['date', 'prediction_unit_id', 'is_consumption']
         agg_by_list: list[str] = ['county', 'is_business', 'product_type']
         
         self.train_data = self.train_data.with_columns(
+            pl.col('datetime').dt.date().cast(pl.Date).alias('date'),
             pl.col('datetime').dt.year().cast(pl.UInt16).alias('year'),
             pl.col('datetime').dt.quarter().cast(pl.UInt8).alias('quarter'),
             pl.col('datetime').dt.month().cast(pl.UInt8).alias('month'),
@@ -170,13 +196,32 @@ class EnefitFeature(EnefitInit):
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
         )
         
+        #create fold time col -> incremental index over dateself.fold_time_col
+        index_date_dict =  {
+            row_['date']: i
+            for i, row_ in (
+                self.train_data.select(
+                    pl.col('date').unique().sort()
+                    .dt.to_string(format="%Y/%m/%d")
+                )
+                .collect().to_pandas().iterrows()
+            )
+        }
+
+        self.train_data = self.train_data.with_columns(
+            pl.col('date').dt.to_string(format="%Y/%m/%d")
+            .map_dict(index_date_dict)
+            .alias(self.fold_time_col)
+            .cast(pl.UInt16)
+        )
+
         #capture every holiday
         min_year = self.train_data.select('year').min().collect().item()
         max_year = self.train_data.select('year').max().collect().item()
         
         #get min block day, max block day to create full dataset
-        min_block_day = self.train_data.select('data_block_id').min().collect().item()
-        max_block_day = self.train_data.select('data_block_id').max().collect().item()
+        min_date = self.train_data.select('date').min().collect().item()
+        max_date = self.train_data.select('date').max().collect().item()
         
         estonian_holidays = list(
             holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
@@ -184,17 +229,15 @@ class EnefitFeature(EnefitInit):
 
         #add holiday as a dummy 0, 1 variable
         self.train_data = self.train_data.with_columns(
-            pl.col('datetime').dt.date().alias('date').cast(pl.Date)
-        ).with_columns(
             pl.when(
                 pl.col('date')
                 .is_in(estonian_holidays)
             ).then(pl.lit(1))
             .otherwise(pl.lit(0))
             .cast(pl.UInt8).alias('holiday')
-        ).drop('date')
+        )
 
-        #calculate target -> data_block_id, prediction_unit_id, is_consumption is row key
+        #calculate target -> date, prediction_unit_id, is_consumption is row key
         #useless aggregation used only to ensure no duplicates
         revealed_targets_avg = (
             self.train_data.select(
@@ -208,9 +251,9 @@ class EnefitFeature(EnefitInit):
         full_revealed_targets = (
             #ensure that every data block id is inserted -> no lag error
             pl.LazyFrame(
-                pl.arange(min_block_day, max_block_day, eager=True)
-                .cast(pl.UInt16)
-                .alias('data_block_id')
+                pl.date_range(min_date, max_date, interval='1d', eager=True)
+                .cast(pl.Date)
+                .alias('date')
             )
             .join(
                 self.train_data.select('prediction_unit_id').unique(),
@@ -226,7 +269,7 @@ class EnefitFeature(EnefitInit):
                 self.train_data.select(['prediction_unit_id'] + agg_by_list).unique(),
                 how='left', on='prediction_unit_id'
             )
-        ).sort(['is_consumption', 'prediction_unit_id', 'data_block_id'], descending=False)
+        ).sort(['is_consumption', 'prediction_unit_id', 'date'], descending=False)
         
         full_revealed_targets = full_revealed_targets.join(
             revealed_targets_avg,
@@ -247,7 +290,7 @@ class EnefitFeature(EnefitInit):
             filter_col_for_agg = [filter_col for filter_col in agg_by_list if filter_col!=col]
             
             #add date and is consumption to calculate aggregation by col
-            join_col_list = ['data_block_id', 'is_consumption'] + filter_col_for_agg
+            join_col_list = ['date', 'is_consumption'] + filter_col_for_agg
             
             #add target averaged over ...
             agg_revealed_targets_avg = (
@@ -295,33 +338,32 @@ class EnefitFeature(EnefitInit):
         #merge with client
         self.data = self.train_data.join(
             self.client_data, how='left', 
-            on=['county', 'is_business', 'product_type', 'data_block_id']
+            on=['county', 'is_business', 'product_type', 'date']
         )
                 
         #merge with electricity
         self.data = self.data.join(
             self.electricity_data, how='left',
-            left_on=['datetime', 'data_block_id'],
-            right_on=['forecast_date', 'data_block_id']
+            on=['datetime'],
         )
         
         #merge with gas
         self.data = self.data.join(
             self.gas_data, how='left',
-            on=['data_block_id']
+            on=['date']
         )
         
         #merge with weather
         self.data = self.data.join(
             self.forecast_weather_data, how='left',
-            left_on = ['datetime', 'data_block_id', 'county'],
-            right_on=  ['origin_datetime', 'data_block_id', 'county']
+            left_on = ['date', 'county'],
+            right_on=  ['date', 'county']
         )
 
         #merge with gas
         self.data = self.data.join(
             self.historical_weather_data, how='left',
-            on = ['data_block_id', 'county'],
+            on = ['date', 'county'],
         )
         
         n_rows_end = self.data.select(pl.count()).collect().item()
