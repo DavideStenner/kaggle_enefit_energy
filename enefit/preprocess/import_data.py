@@ -5,6 +5,9 @@ from typing import Dict, OrderedDict, Union
 from enefit.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
+    def update_with_new_data(self) -> None:
+            pass
+     
     def scan_all_dataset(self) -> None:
         
         self.location_data: pl.LazyFrame = pl.scan_csv(
