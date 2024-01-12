@@ -1,6 +1,8 @@
 import os
 import gc
 
+import polars as pl
+
 from typing import Any
 
 from enefit.preprocess.import_data import EnefitImport
@@ -49,7 +51,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.merge_all()
         
         print('Collecting....')
-        self.data = self.data.collect()
+        self.data = self.data.filter(pl.col('target').is_not_null()).collect()
         _ = gc.collect()
         
         print('Creating fold_info column ...')

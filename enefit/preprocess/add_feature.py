@@ -238,7 +238,6 @@ class EnefitFeature(EnefitInit):
         )
 
         #calculate target -> date, prediction_unit_id, is_consumption is row key
-        #useless aggregation used only to ensure no duplicates
         revealed_targets_avg = (
             self.train_data.select(
                 grouped_col_list + ['target']
