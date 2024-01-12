@@ -36,10 +36,12 @@ class LgbmTrainer(LgbmInit):
             fold_data = self.access_fold(fold_=fold_)
             
             train_filtered = fold_data.filter(
-                pl.col('current_fold') == 't'
+                (pl.col('current_fold') == 't') &
+                (pl.col('target').is_not_null())
             )
             test_filtered = fold_data.filter(
-                pl.col('current_fold') == 'v'
+                (pl.col('current_fold') == 'v') &
+                (pl.col('target').is_not_null())
             )
             
             train_matrix = lgb.Dataset(
