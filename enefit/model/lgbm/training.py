@@ -43,6 +43,10 @@ class LgbmTrainer(LgbmInit):
                 (pl.col('current_fold') == 'v') &
                 (pl.col('target').is_not_null())
             )
+            train_rows = train_filtered.select(pl.count()).collect().item()
+            test_rows = test_filtered.select(pl.count()).collect().item()
+            
+            print(f'{train_rows} train rows; {test_rows} test rows')
             
             train_matrix = lgb.Dataset(
                 train_filtered.select(self.feature_list).collect().to_numpy().astype('float32'),
