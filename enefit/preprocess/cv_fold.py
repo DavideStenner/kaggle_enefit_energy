@@ -103,9 +103,10 @@ def get_fold(
     return fold_split
 
 class EnefitFoldCreator(EnefitInit):
+    def create_fold(self):        
         data_for_split = self.data.select([self.fold_time_col]).to_pandas() 
         fold_split = get_fold(
-            self.data.to_pandas(), time_col=self.fold_time_col, 
+            data_for_split, time_col=self.fold_time_col, 
             embargo=self.embarko_skip,
             num_fold=self.n_folds, return_index=False
         )
