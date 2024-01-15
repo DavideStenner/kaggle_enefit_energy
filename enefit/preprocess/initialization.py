@@ -14,7 +14,8 @@ class EnefitInit():
         self.embarko_skip: int = embarko_skip
         self.n_folds: int = config_dict['N_FOLD']
         self.fold_time_col: str = 'date_order_kfold'
-        
+        self.inference: bool = False
+
         self._initialiaze_empty_dataset()
         self._initialize_used_column()
         

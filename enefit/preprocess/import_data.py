@@ -16,6 +16,9 @@ class EnefitImport(EnefitInit):
             target_data_new: pd.DataFrame,
         ) -> None:
         
+        if not self.inference:
+            raise ValueError('Call begin_inference first...')
+        
         client_data_new = pl.from_pandas(
             client_data_new[self.starting_dataset_column_dict['client']], 
             schema_overrides=self.starting_dataset_schema_dict['client']

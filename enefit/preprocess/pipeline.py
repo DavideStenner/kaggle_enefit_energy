@@ -19,7 +19,6 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
             embarko_skip=embarko_skip
         )
         self.import_all()
-        self.inference: bool = False
         
     def save_data(self) -> None:
         print('saving processed dataset')
@@ -73,8 +72,9 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.inference: bool = True
         
         self.import_all()
+        
+        #collect to enable append
         self.collect_all()
-        self.create_feature()
         
     def __call__(self) -> None:
         if self.inference:
