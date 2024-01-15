@@ -177,12 +177,117 @@ class EnefitFeature(EnefitInit):
             index=index_variable, columns='hours_ago'
         ).lazy()
 
-    def create_train_feature(self) -> None:
-        original_num_rows = self.train_data.select(pl.count()).collect().item()
+    def creat_target_feature(self) -> None:
+        original_num_rows = self.target_data.select(pl.count()).collect().item()
         
+        self.target_data = self.target_data.with_columns(
+            pl.col('date').dt.date().cast(pl.Date).alias('date')
+        )
         grouped_col_list: list[str] = ['date', 'prediction_unit_id', 'is_consumption']
         agg_by_list: list[str] = ['county', 'is_business', 'product_type']
         
+        #get min block day, max block day to create full dataset
+        min_date = self.target_data.select('date').min().collect().item()
+        max_date = self.target_data.select('date').max().collect().item()
+        
+        #calculate target -> date, prediction_unit_id, is_consumption is row key
+        revealed_targets_avg = (
+            self.target_data.select(
+                grouped_col_list + ['target']
+            ).group_by(grouped_col_list)
+            .agg(
+                pl.col('target').mean().cast(pl.Float32)
+            )
+        )
+        #create full dataset so shift is correct
+        full_revealed_targets = (
+            #ensure that every data block id is inserted -> no lag error
+            pl.LazyFrame(
+                pl.date_range(min_date, max_date + pl.duration(days=1), interval='1d', eager=True)
+                .cast(pl.Date)
+                .alias('date')
+            )
+            .join(
+                self.target_data.select('prediction_unit_id').unique(),
+                how = 'cross'
+            )
+            .join(
+                self.target_data.select('is_consumption').unique(),
+                how='cross'
+            )
+            #add detail over county, is_business, product_type used to join aggregation
+            #to drop before joining with train data
+            .join(
+                self.target_data.select(['prediction_unit_id'] + agg_by_list).unique(),
+                how='left', on='prediction_unit_id'
+            )
+        ).sort(['is_consumption', 'prediction_unit_id', 'date'], descending=False)
+        
+        full_revealed_targets = full_revealed_targets.join(
+            revealed_targets_avg,
+            on=grouped_col_list,
+            how='left'
+        )
+        #add aggregation by multiple col with lag
+        #add target shifted
+        list_agg_operation_shift = [
+            (
+                pl.col('target').shift(lag_).over(['prediction_unit_id', 'is_consumption'])
+                .cast(pl.Float32).alias(f'target_lag_{lag_}')
+            )
+            for lag_ in range(2, self.target_n_lags+1)
+        ]
+
+        for col in agg_by_list:
+            filter_col_for_agg = [filter_col for filter_col in agg_by_list if filter_col!=col]
+            
+            #add date and is consumption to calculate aggregation by col
+            join_col_list = ['date', 'is_consumption'] + filter_col_for_agg
+            
+            #add target averaged over ...
+            agg_revealed_targets_avg = (
+                self.target_data.select(
+                    join_col_list + ['target']
+                ).group_by(join_col_list)
+                .agg(
+                    pl.col('target').mean().cast(pl.Float32).alias(f'avg_target_{col}')
+                )
+            )
+
+            full_revealed_targets = full_revealed_targets.join(
+                agg_revealed_targets_avg,
+                on=join_col_list,
+                how='left'
+            )
+            #add multiple avg target operation
+            list_agg_operation_shift += [
+                (
+                    pl.col(f'avg_target_{col}').shift(lag_).over(['prediction_unit_id', 'is_consumption'])
+                    .cast(pl.Float32).alias(f'avg_target_{col}_lag_{lag_}')
+                )
+                for lag_ in self.agg_target_n_lags
+            ]
+
+        #add multiple target now
+        full_revealed_targets = full_revealed_targets.with_columns(
+            list_agg_operation_shift
+        ).drop(['target'] + [f'avg_target_{drop_col}' for drop_col in agg_by_list] + agg_by_list)
+        
+        self.target_data = self.target_data.join(
+            full_revealed_targets, 
+            how='left', 
+            left_on = grouped_col_list,
+            right_on = grouped_col_list
+        )
+        final_num_rows = self.target_data.select(pl.count()).collect().item()
+        assert final_num_rows == original_num_rows
+        
+        self.target_data = self.target_data.drop(
+            ['target', 'date']
+        )
+        print(self.target_data.columns)
+
+    def create_train_feature(self) -> None:
         self.train_data = self.train_data.with_columns(
             pl.col('datetime').dt.date().cast(pl.Date).alias('date'),
             pl.col('datetime').dt.year().cast(pl.UInt16).alias('year'),
@@ -218,11 +323,7 @@ class EnefitFeature(EnefitInit):
         #capture every holiday
         min_year = self.train_data.select('year').min().collect().item()
         max_year = self.train_data.select('year').max().collect().item()
-        
-        #get min block day, max block day to create full dataset
-        min_date = self.train_data.select('date').min().collect().item()
-        max_date = self.train_data.select('date').max().collect().item()
-        
+                
         estonian_holidays = list(
             holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
         )
@@ -236,98 +337,6 @@ class EnefitFeature(EnefitInit):
             .otherwise(pl.lit(0))
             .cast(pl.UInt8).alias('holiday')
         )
-
-        #calculate target -> date, prediction_unit_id, is_consumption is row key
-        revealed_targets_avg = (
-            self.train_data.select(
-                grouped_col_list + ['target']
-            ).group_by(grouped_col_list)
-            .agg(
-                pl.col('target').mean().cast(pl.Float32)
-            )
-        )
-        #create full dataset so shift is correct
-        full_revealed_targets = (
-            #ensure that every data block id is inserted -> no lag error
-            pl.LazyFrame(
-                pl.date_range(min_date, max_date, interval='1d', eager=True)
-                .cast(pl.Date)
-                .alias('date')
-            )
-            .join(
-                self.train_data.select('prediction_unit_id').unique(),
-                how = 'cross'
-            )
-            .join(
-                self.train_data.select('is_consumption').unique(),
-                how='cross'
-            )
-            #add detail over county, is_business, product_type used to join aggregation
-            #to drop before joining with train data
-            .join(
-                self.train_data.select(['prediction_unit_id'] + agg_by_list).unique(),
-                how='left', on='prediction_unit_id'
-            )
-        ).sort(['is_consumption', 'prediction_unit_id', 'date'], descending=False)
-        
-        full_revealed_targets = full_revealed_targets.join(
-            revealed_targets_avg,
-            on=grouped_col_list,
-            how='left'
-        )
-        #add aggregation by multiple col with lag
-        #add target shifted
-        list_agg_operation_shift = [
-            (
-                pl.col('target').shift(lag_).over(['prediction_unit_id', 'is_consumption'])
-                .cast(pl.Float32).alias(f'target_lag_{lag_}')
-            )
-            for lag_ in range(2, self.target_n_lags+1)
-        ]
-
-        for col in agg_by_list:
-            filter_col_for_agg = [filter_col for filter_col in agg_by_list if filter_col!=col]
-            
-            #add date and is consumption to calculate aggregation by col
-            join_col_list = ['date', 'is_consumption'] + filter_col_for_agg
-            
-            #add target averaged over ...
-            agg_revealed_targets_avg = (
-                self.train_data.select(
-                    join_col_list + ['target']
-                ).group_by(join_col_list)
-                .agg(
-                    pl.col('target').mean().cast(pl.Float32).alias(f'avg_target_{col}')
-                )
-            )
-
-            full_revealed_targets = full_revealed_targets.join(
-                agg_revealed_targets_avg,
-                on=join_col_list,
-                how='left'
-            )
-            #add multiple avg target operation
-            list_agg_operation_shift += [
-                (
-                    pl.col(f'avg_target_{col}').shift(lag_).over(['prediction_unit_id', 'is_consumption'])
-                    .cast(pl.Float32).alias(f'avg_target_{col}_lag_{lag_}')
-                )
-                for lag_ in self.agg_target_n_lags
-            ]
-
-        #add multiple target now
-        full_revealed_targets = full_revealed_targets.with_columns(
-            list_agg_operation_shift
-        ).drop(['target'] + [f'avg_target_{drop_col}' for drop_col in agg_by_list] + agg_by_list)
-        
-        self.train_data = self.train_data.join(
-            full_revealed_targets, 
-            how='left', 
-            left_on = grouped_col_list,
-            right_on = grouped_col_list
-        )
-        final_num_rows = self.train_data.select(pl.count()).collect().item()
-        assert final_num_rows == original_num_rows
         
     def merge_all(self) -> None:
         n_rows_begin = self.train_data.select(pl.count()).collect().item()
@@ -364,7 +373,11 @@ class EnefitFeature(EnefitInit):
             self.historical_weather_data, how='left',
             on = ['date', 'county'],
         )
-        
+        self.data = self.data.join(
+            self.target_data, how='left',
+            on = ['datetime', 'prediction_unit_id', 'is_consumption'],
+        )
+
         n_rows_end = self.data.select(pl.count()).collect().item()
 
         assert n_rows_begin == n_rows_end

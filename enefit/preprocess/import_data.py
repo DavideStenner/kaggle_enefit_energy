@@ -235,8 +235,8 @@ class EnefitImport(EnefitInit):
         }
     
     def create_target_data(self) -> None:
-        self.starting_target_data: pl.LazyFrame = pl.select(
-            self.starting_client_data, self.starting_dataset_column_dict['target']
+        self.starting_target_data: pl.LazyFrame = self.starting_train_data.select(
+            self.starting_dataset_column_dict['target']
         )
 
     

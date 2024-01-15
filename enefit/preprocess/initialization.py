@@ -114,6 +114,7 @@ class EnefitInit():
                 "is_business",
                 "product_type",
                 "is_consumption",
+                "prediction_unit_id",
                 "datetime",
             ]
         }
