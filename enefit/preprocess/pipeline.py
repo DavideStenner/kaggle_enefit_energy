@@ -39,6 +39,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.create_gas_feature()
         self.create_historical_weather_feature()
         self.create_train_feature()
+        self.create_target_feature()
         
     def preprocess_inference(self) -> None:
         self.create_feature()
