@@ -1,5 +1,5 @@
 import polars as pl
-from typing import Any, Union, Dict, OrderedDict
+from typing import Any, Union, Dict
 
 class EnefitInit():
     def __init__(self, 
@@ -38,6 +38,9 @@ class EnefitInit():
         
         self.train_data: Union[pl.LazyFrame, pl.DataFrame] = None
         self.starting_train_data: Union[pl.LazyFrame, pl.DataFrame] = None
+        
+        self.target_data: Union[pl.LazyFrame, pl.DataFrame] = None
+        self.starting_target_data: Union[pl.LazyFrame, pl.DataFrame] = None
         
         self.data: Union[pl.LazyFrame, pl.DataFrame] = None
     
@@ -104,5 +107,13 @@ class EnefitInit():
                 "datetime",
                 "row_id",
                 "prediction_unit_id"
+            ],
+            'target': [
+                "target",
+                "county",
+                "is_business",
+                "product_type",
+                "is_consumption",
+                "datetime",
             ]
         }

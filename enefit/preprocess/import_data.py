@@ -1,5 +1,6 @@
 import os
 import polars as pl
+import pandas as pd
 
 from typing import Dict, OrderedDict
 from enefit.preprocess.initialization import EnefitInit
@@ -229,8 +230,15 @@ class EnefitImport(EnefitInit):
             'gas': self.starting_gas_data.schema,
             'historical_weather': self.starting_historical_weather_data.schema,
             'location': self.location_data.schema,
-            'train': self.starting_train_data.schema
+            'train': self.starting_train_data.schema,
+            'target': self.starting_target_data.schema
         }
+    
+    def create_target_data(self) -> None:
+        self.starting_target_data: pl.LazyFrame = pl.select(
+            self.starting_client_data, self.starting_dataset_column_dict['target']
+        )
+
     
     def import_all(self) -> None:
         self.scan_all_dataset()
@@ -242,5 +250,7 @@ class EnefitImport(EnefitInit):
         self.downcast_historical_weather_data()
         self.downcast_location()
         self.downcast_train()
+        
+        self.create_target_data()
         
         self.memorize_starting_dataset_schema()

@@ -13,7 +13,7 @@ class EnefitFeature(EnefitInit):
         self.forecast_weather_data = self.starting_forecast_weather_data
         self.historical_weather_data = self.starting_historical_weather_data
         self.train_data = self.starting_train_data
-        
+        self.target_data = self.starting_target_data
         
     def create_client_feature(self) -> None:
         #add new column
