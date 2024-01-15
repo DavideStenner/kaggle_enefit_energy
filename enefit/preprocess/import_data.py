@@ -14,11 +14,18 @@ class EnefitImport(EnefitInit):
             forecast_weather_data_new: pd.DataFrame,
             historical_weather_data_new: pd.DataFrame,
             target_data_new: pd.DataFrame,
+            test_data: pd.DataFrame
         ) -> None:
         
         if not self.inference:
             raise ValueError('Call begin_inference first...')
         
+        self.test_data = pl.from_pandas(
+            test_data.rename(
+                columns={"prediction_datetime": "datetime"}
+            )[self.starting_dataset_column_dict['test']], 
+            schema_overrides=self.starting_dataset_schema_dict['train']
+        )
         client_data_new = pl.from_pandas(
             client_data_new[self.starting_dataset_column_dict['client']], 
             schema_overrides=self.starting_dataset_schema_dict['client']
@@ -83,7 +90,7 @@ class EnefitImport(EnefitInit):
                 self.path_original_data, 'client.csv'
             )
         )
-        self.starting_train_data: pl.LazyFrame = pl.scan_csv(
+        self.train_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'train.csv'
             )
@@ -210,7 +217,7 @@ class EnefitImport(EnefitInit):
         
     #TRAIN
     def downcast_train(self) -> None:
-        self.starting_train_data = self.starting_train_data.select(
+        self.train_data = self.train_data.select(
             self.starting_dataset_column_dict['train']
         ).with_columns(
             (
@@ -232,12 +239,12 @@ class EnefitImport(EnefitInit):
             'gas': self.starting_gas_data.schema,
             'historical_weather': self.starting_historical_weather_data.schema,
             'location': self.location_data.schema,
-            'train': self.starting_train_data.schema,
+            'train': self.train_data.schema,
             'target': self.starting_target_data.schema
         }
     
     def create_target_data(self) -> None:
-        self.starting_target_data: pl.LazyFrame = self.starting_train_data.select(
+        self.starting_target_data: pl.LazyFrame = self.train_data.select(
             self.starting_dataset_column_dict['target']
         )
 

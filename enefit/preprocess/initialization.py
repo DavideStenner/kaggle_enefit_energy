@@ -37,14 +37,14 @@ class EnefitInit():
         
         self.location_data: Union[pl.LazyFrame, pl.DataFrame] = None
         
-        self.train_data: Union[pl.LazyFrame, pl.DataFrame] = None
-        self.starting_train_data: Union[pl.LazyFrame, pl.DataFrame] = None
-        
+        self.train_data: Union[pl.LazyFrame, pl.DataFrame] = None        
+        self.test_data: Union[pl.LazyFrame, pl.DataFrame] = None
+
         self.target_data: Union[pl.LazyFrame, pl.DataFrame] = None
         self.starting_target_data: Union[pl.LazyFrame, pl.DataFrame] = None
         
         self.data: Union[pl.LazyFrame, pl.DataFrame] = None
-    
+        
     def _initialize_used_column(self) -> None:
         self.starting_dataset_column_dict: Dict[str, list[str]] = {
             'client': [
@@ -115,5 +115,13 @@ class EnefitInit():
                 "product_type",
                 "is_consumption",
                 "datetime",
-            ]
+            ],
+            'test': [
+                "county",
+                "is_business",
+                "product_type",
+                "is_consumption",
+                "datetime",
+                "row_id",
+            ] 
         }

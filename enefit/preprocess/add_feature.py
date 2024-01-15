@@ -12,7 +12,6 @@ class EnefitFeature(EnefitInit):
         self.electricity_data = self.starting_electricity_data
         self.forecast_weather_data = self.starting_forecast_weather_data
         self.historical_weather_data = self.starting_historical_weather_data
-        self.train_data = self.starting_train_data
         self.target_data = self.starting_target_data
         
     def create_client_feature(self) -> None:
@@ -296,24 +295,25 @@ class EnefitFeature(EnefitInit):
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
         )
         
-        #create fold time col -> incremental index over dateself.fold_time_col
-        index_date_dict =  {
-            row_['date']: i
-            for i, row_ in (
-                self.train_data.select(
-                    pl.col('date').unique().sort()
-                    .dt.to_string(format="%Y/%m/%d")
+        if not self.inference:
+            #create fold time col -> incremental index over dateself.fold_time_col
+            index_date_dict =  {
+                row_['date']: i
+                for i, row_ in (
+                    self.train_data.select(
+                        pl.col('date').unique().sort()
+                        .dt.to_string(format="%Y/%m/%d")
+                    )
+                    .collect().to_pandas().iterrows()
                 )
-                .collect().to_pandas().iterrows()
-            )
-        }
+            }
 
-        self.train_data = self.train_data.with_columns(
-            pl.col('date').dt.to_string(format="%Y/%m/%d")
-            .map_dict(index_date_dict)
-            .alias(self.fold_time_col)
-            .cast(pl.UInt16)
-        )
+            self.train_data = self.train_data.with_columns(
+                pl.col('date').dt.to_string(format="%Y/%m/%d")
+                .map_dict(index_date_dict)
+                .alias(self.fold_time_col)
+                .cast(pl.UInt16)
+            )
 
         #capture every holiday
         min_year = self.train_data.select('year').min().collect().item()
@@ -334,12 +334,14 @@ class EnefitFeature(EnefitInit):
         )
         
     def merge_all(self) -> None:
-        n_rows_begin = self.train_data.select(pl.count()).collect().item()
+        self.data = self.test_data if self.inference else self.train_data
+            
+        n_rows_begin = self.data.select(pl.count()).collect().item()
 
         #Merge all datasets
         
         #merge with client
-        self.data = self.train_data.join(
+        self.data = self.data.join(
             self.client_data, how='left', 
             on=['county', 'is_business', 'product_type', 'date']
         )
