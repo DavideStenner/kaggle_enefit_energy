@@ -5,8 +5,66 @@ from typing import Dict, OrderedDict
 from enefit.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
-    def update_with_new_data(self) -> None:
-            pass
+    def update_with_new_data(
+            self,
+            client_data_new: pd.DataFrame,
+            gas_data_new: pd.DataFrame,
+            electricity_data_new: pd.DataFrame,
+            forecast_weather_data_new: pd.DataFrame,
+            historical_weather_data_new: pd.DataFrame,
+            target_data_new: pd.DataFrame,
+        ) -> None:
+        
+        client_data_new = pl.from_pandas(
+            client_data_new[self.starting_dataset_column_dict['client']], 
+            schema_overrides=self.starting_dataset_schema_dict['client']
+        )
+        gas_data_new = pl.from_pandas(
+            gas_data_new[self.starting_dataset_column_dict['gas']],
+            schema_overrides=self.starting_dataset_schema_dict['gas'],
+        )
+        electricity_data_new = pl.from_pandas(
+            electricity_data_new[self.starting_dataset_column_dict['electricity']],
+            schema_overrides=self.starting_dataset_schema_dict['electricity'],
+        )
+        forecast_weather_data_new = pl.from_pandas(
+            forecast_weather_data_new[self.starting_dataset_column_dict['forecast_weather']],
+            schema_overrides=self.starting_dataset_schema_dict['forecast_weather'],
+        )
+        historical_weather_data_new = pl.from_pandas(
+            historical_weather_data_new[self.starting_dataset_column_dict['historical_weather']],
+            schema_overrides=self.starting_dataset_schema_dict['historical_weather'],
+        )
+        target_data_new = pl.from_pandas(
+            target_data_new[self.starting_dataset_column_dict['target']], 
+            schema_overrides=self.starting_dataset_schema_dict['target']
+        )
+
+        self.starting_client_data = pl.concat(
+            [self.starting_client_data, client_data_new]
+        ).unique(
+            ["date", "county", "is_business", "product_type"]
+        )
+        self.starting_gas_data = pl.concat(
+            [self.starting_gas_data, gas_data_new]).unique(
+            ["forecast_date"]
+        )
+        self.starting_electricity_data = pl.concat(
+            [self.starting_electricity_data, electricity_data_new]
+        ).unique(["forecast_date"])
+        
+        self.starting_forecast_weather_data = pl.concat(
+            [self.starting_forecast_weather_data, forecast_weather_data_new]
+        ).unique(["forecast_datetime", "latitude", "longitude", "hours_ahead"])
+        
+        self.starting_historical_weather_data = pl.concat(
+            [self.starting_historical_weather_data, historical_weather_data_new]
+        ).unique(["datetime", "latitude", "longitude"])
+        
+        self.starting_target_data = pl.concat([self.starting_target_data, target_data_new]).unique(
+            ["datetime", "county", "is_business", "product_type", "is_consumption"]
+        )
+
      
     def scan_all_dataset(self) -> None:
         
