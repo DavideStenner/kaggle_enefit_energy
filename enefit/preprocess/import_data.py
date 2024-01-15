@@ -217,8 +217,7 @@ class EnefitImport(EnefitInit):
                 pl.col('target').cast(pl.Float32),
                 pl.col('is_consumption').cast(pl.UInt8),
                 pl.col('datetime').str.to_datetime(),
-                pl.col('row_id').cast(pl.UInt32),
-                pl.col('prediction_unit_id').cast(pl.UInt8)
+                pl.col('row_id').cast(pl.UInt32)
             )
         )
 

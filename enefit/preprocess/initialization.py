@@ -106,7 +106,6 @@ class EnefitInit():
                 "is_consumption",
                 "datetime",
                 "row_id",
-                "prediction_unit_id"
             ],
             'target': [
                 "target",
@@ -114,7 +113,6 @@ class EnefitInit():
                 "is_business",
                 "product_type",
                 "is_consumption",
-                "prediction_unit_id",
                 "datetime",
             ]
         }
