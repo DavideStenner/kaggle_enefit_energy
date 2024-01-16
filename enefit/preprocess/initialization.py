@@ -18,6 +18,7 @@ class EnefitInit():
 
         self._initialiaze_empty_dataset()
         self._initialize_used_column()
+        self._initialize_pandas_schema()
         
     def _initialiaze_empty_dataset(self):
         self.client_data: Union[pl.LazyFrame, pl.DataFrame] = None
@@ -43,7 +44,78 @@ class EnefitInit():
         self.starting_target_data: Union[pl.LazyFrame, pl.DataFrame] = None
         
         self.data: Union[pl.LazyFrame, pl.DataFrame] = None
-        
+    
+    def _initialize_pandas_schema(self) -> None:
+        self.pandas_dataset_schema_dict: Dict[str, Dict[str, str]] = {
+            'client': {
+                'product_type': 'int8',
+                'county': 'int8',
+                'eic_count': 'int16',
+                'installed_capacity': 'float32',
+                'is_business': 'bool'
+            },
+            'electricity': {
+                'euros_per_mwh': 'float64',
+            },
+            'forecast_weather': {
+                'latitude': 'float32',
+                'longitude': 'float32',
+                'hours_ahead': 'int8',
+                'temperature': 'float32',
+                'dewpoint': 'float32',
+                'cloudcover_high': 'float32',
+                'cloudcover_low': 'float32',
+                'cloudcover_mid': 'float32',
+                'cloudcover_total': 'float32',
+                '10_metre_u_wind_component': 'float32',
+                '10_metre_v_wind_component': 'float32',
+                'direct_solar_radiation': 'float32',
+                'surface_solar_radiation_downwards': 'float32',
+                'snowfall': 'float32',
+                'total_precipitation': 'float32'
+            },
+            'gas': {
+                'lowest_price_per_mwh': 'float32',
+                'highest_price_per_mwh': 'float32',
+            },
+            'historical_weather': {
+                'temperature': 'float32',
+                'dewpoint': 'float32',
+                'rain': 'float32',
+                'snowfall': 'float32',
+                'surface_pressure': 'float32',
+                'cloudcover_total': 'int64',
+                'cloudcover_low': 'float32',
+                'cloudcover_mid': 'float32',
+                'cloudcover_high': 'float32',
+                'windspeed_10m': 'float32',
+                'winddirection_10m': 'float32',
+                'shortwave_radiation': 'float32',
+                'direct_solar_radiation': 'float64',
+                'diffuse_radiation': 'float32',
+                'latitude': 'float32',
+                'longitude': 'float32'
+            },
+            'test': {
+                'county': 'int8',
+                'is_business': 'bool',
+                'product_type': 'int8',
+                'is_consumption': 'bool',
+                'row_id': 'int32',
+                'prediction_unit_id': 'int16',
+                'currently_scored': 'bool'
+            },
+            'target': {
+                'county': 'int8',
+                'is_business': 'bool',
+                'product_type': 'int8',
+                'target': 'float64',
+                'is_consumption': 'bool',
+                'row_id': 'int32',
+                'prediction_unit_id': 'int16'
+            }
+        }
+
     def _initialize_used_column(self) -> None:
         self.starting_dataset_column_dict: Dict[str, list[str]] = {
             'client': [

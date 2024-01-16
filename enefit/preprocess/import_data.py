@@ -2,10 +2,71 @@ import os
 import polars as pl
 import pandas as pd
 
-from typing import Dict, OrderedDict
+from typing import Dict, OrderedDict, List
 from enefit.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
+    def set_type_new_data(
+            self,
+            client_data_new: pd.DataFrame,
+            gas_data_new: pd.DataFrame,
+            electricity_data_new: pd.DataFrame,
+            forecast_weather_data_new: pd.DataFrame,
+            historical_weather_data_new: pd.DataFrame,
+            target_data_new: pd.DataFrame,
+            test_data: pd.DataFrame
+    ) -> List[pd.DataFrame]:
+        
+        #TEST
+        test_data = test_data.astype(self.pandas_dataset_schema_dict['test'])
+        test_data['prediction_datetime'] = pd.to_datetime(test_data['prediction_datetime'])
+        test_data = test_data.rename(
+            columns={"prediction_datetime": "datetime"}
+        )
+        
+        #CLIENT
+        client_data_new = client_data_new.astype(self.pandas_dataset_schema_dict['client'])
+        client_data_new['date'] = pd.to_datetime(client_data_new['date'])
+        
+        #GAS
+        gas_data_new = gas_data_new.astype(self.pandas_dataset_schema_dict['gas'])
+        
+        gas_data_new['origin_date'] = pd.to_datetime(gas_data_new['origin_date'])
+        gas_data_new['forecast_date'] = pd.to_datetime(gas_data_new['forecast_date'])
+
+        #ELECTRICITY
+        electricity_data_new = electricity_data_new.astype(self.pandas_dataset_schema_dict['electricity'])
+        electricity_data_new['origin_date'] = pd.to_datetime(electricity_data_new['origin_date'])
+        electricity_data_new['forecast_date'] = pd.to_datetime(electricity_data_new['forecast_date'])
+
+        #FORECAST WEATHER
+        forecast_weather_data_new = forecast_weather_data_new.astype(
+            self.pandas_dataset_schema_dict['forecast_weather']
+        )
+        forecast_weather_data_new['origin_datetime'] = pd.to_datetime(forecast_weather_data_new['origin_datetime'])
+        forecast_weather_data_new['forecast_datetime'] = pd.to_datetime(forecast_weather_data_new['forecast_datetime'])
+       
+        #HISTORICAL WEATHER
+        historical_weather_data_new = historical_weather_data_new.astype(
+            self.pandas_dataset_schema_dict['historical_weather']
+        )
+        historical_weather_data_new['datetime'] = pd.to_datetime(historical_weather_data_new['datetime'])
+
+        #TARGE
+        target_data_new = target_data_new.astype(
+            self.pandas_dataset_schema_dict['target']
+        )
+        target_data_new['datetime'] = pd.to_datetime(target_data_new['datetime'])
+        return (
+            client_data_new,
+            gas_data_new,
+            electricity_data_new,
+            forecast_weather_data_new,
+            historical_weather_data_new,
+            target_data_new,
+            test_data
+        )
+        
     def update_with_new_data(
             self,
             client_data_new: pd.DataFrame,
@@ -20,10 +81,27 @@ class EnefitImport(EnefitInit):
         if not self.inference:
             raise ValueError('Call begin_inference first...')
         
-        self.test_data = pl.from_pandas(
-            test_data.rename(
-                columns={"prediction_datetime": "datetime"}
-            )[self.starting_dataset_column_dict['test']], 
+        #ensure new data has correct dtype
+        (
+            client_data_new,
+            gas_data_new,
+            electricity_data_new,
+            forecast_weather_data_new,
+            historical_weather_data_new,
+            target_data_new,
+            test_data
+        ) = self.set_type_new_data(
+            client_data_new,
+            gas_data_new,
+            electricity_data_new,
+            forecast_weather_data_new,
+            historical_weather_data_new,
+            target_data_new,
+            test_data
+        )
+        
+        test_data = pl.from_pandas(
+            test_data[self.starting_dataset_column_dict['test']], 
             schema_overrides=self.starting_dataset_schema_dict['train']
         )
         client_data_new = pl.from_pandas(
@@ -51,6 +129,7 @@ class EnefitImport(EnefitInit):
             schema_overrides=self.starting_dataset_schema_dict['target']
         )
 
+        self.main_data = test_data
         self.starting_client_data = pl.concat(
             [self.starting_client_data, client_data_new]
         ).unique(
@@ -66,7 +145,7 @@ class EnefitImport(EnefitInit):
         
         self.starting_forecast_weather_data = pl.concat(
             [self.starting_forecast_weather_data, forecast_weather_data_new]
-        ).unique(["forecast_datetime", "latitude", "longitude", "hours_ahead"])
+        ).unique(["origin_datetime", "hours_ahead", "latitude", "longitude", "hours_ahead"])
         
         self.starting_historical_weather_data = pl.concat(
             [self.starting_historical_weather_data, historical_weather_data_new]
