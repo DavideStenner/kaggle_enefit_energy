@@ -34,7 +34,10 @@ class LgbmInference(LgbmInit):
         ) as file:
             self.model_list = pickle.load(file)
 
+    def activate_inference(self) -> None:
+        self.load_model()
         self.inference = True
+        
     def predict(self, test_data: pl.DataFrame) -> None:
         assert self.inference
         

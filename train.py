@@ -11,4 +11,4 @@ if __name__=='__main__':
         config_dict=config_dict,
         metric_eval='l1'
     )
-    trainer()
+    trainer.train_explain()
