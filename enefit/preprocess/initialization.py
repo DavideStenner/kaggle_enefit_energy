@@ -37,8 +37,7 @@ class EnefitInit():
         
         self.location_data: Union[pl.LazyFrame, pl.DataFrame] = None
         
-        self.train_data: Union[pl.LazyFrame, pl.DataFrame] = None        
-        self.test_data: Union[pl.LazyFrame, pl.DataFrame] = None
+        self.main_data: Union[pl.LazyFrame, pl.DataFrame] = None        
 
         self.target_data: Union[pl.LazyFrame, pl.DataFrame] = None
         self.starting_target_data: Union[pl.LazyFrame, pl.DataFrame] = None

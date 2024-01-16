@@ -63,7 +63,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.starting_forecast_weather_data = self.starting_forecast_weather_data.collect()
         self.starting_gas_data = self.starting_gas_data.collect()
         self.starting_historical_weather_data = self.starting_historical_weather_data.collect()
-        self.starting_train_data = self.starting_train_data.collect()
+        self.main_data = self.main_data.collect()
         self.starting_target_data = self.starting_target_data.collect()
         
     def begin_inference(self) -> None:

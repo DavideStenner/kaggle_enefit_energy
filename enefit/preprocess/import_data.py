@@ -90,7 +90,7 @@ class EnefitImport(EnefitInit):
                 self.path_original_data, 'client.csv'
             )
         )
-        self.train_data: pl.LazyFrame = pl.scan_csv(
+        self.main_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
                 self.path_original_data, 'train.csv'
             )
@@ -217,7 +217,7 @@ class EnefitImport(EnefitInit):
         
     #TRAIN
     def downcast_train(self) -> None:
-        self.train_data = self.train_data.select(
+        self.main_data = self.main_data.select(
             self.starting_dataset_column_dict['train']
         ).with_columns(
             (
@@ -239,12 +239,12 @@ class EnefitImport(EnefitInit):
             'gas': self.starting_gas_data.schema,
             'historical_weather': self.starting_historical_weather_data.schema,
             'location': self.location_data.schema,
-            'train': self.train_data.schema,
+            'train': self.main_data.schema,
             'target': self.starting_target_data.schema
         }
     
     def create_target_data(self) -> None:
-        self.starting_target_data: pl.LazyFrame = self.train_data.select(
+        self.starting_target_data: pl.LazyFrame = self.main_data.select(
             self.starting_dataset_column_dict['target']
         )
 
