@@ -8,6 +8,31 @@ import lightgbm as lgb
 from enefit.model.lgbm.initialization import LgbmInit
 
 class LgbmTrainer(LgbmInit):
+    def _init_train(self) -> None:
+        self.data = pl.scan_parquet(
+            os.path.join(
+                self.config_dict['PATH_PARQUET_DATA'],
+                'data.parquet'
+            )
+        )
+        self.feature_list = [
+            col for col in self.data.columns
+            if col not in self.useless_col_list + [self.fold_name, self.target_col_name]
+        ]
+        
+        #save feature list locally for later
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'used_feature.txt'
+            ), 'w'
+        ) as file:
+            json.dump(
+                {
+                    'feature_model': self.feature_list
+                }, file
+            )
+            
     def access_fold(self, fold_: int) -> pl.LazyFrame:
         fold_data = self.data
         fold_data = fold_data.with_columns(
@@ -19,6 +44,8 @@ class LgbmTrainer(LgbmInit):
         return fold_data
 
     def train(self) -> None:
+        
+        self._init_train()
         
         for fold_ in range(self.n_fold):
             print(f'\n\nStarting fold {fold_}\n\n\n')

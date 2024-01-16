@@ -3,6 +3,7 @@ import json
 import pickle
 import pandas as pd
 import seaborn as sns
+import lightgbm as lgb
 import matplotlib.pyplot as plt
 
 from typing import Union
@@ -32,7 +33,16 @@ class LgbmExplainer(LgbmInit):
         )
         plt.close(fig)
 
-    def evaluate_score(self) -> None:        
+    def evaluate_score(self) -> None:    
+        #load feature list
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'used_feature.txt'
+            ), 'r'
+        ) as file:
+            self.feature_list = json.load(file)
+        
         # Find best epoch
         with open(
             os.path.join(
@@ -113,7 +123,7 @@ class LgbmExplainer(LgbmInit):
                 'model_list_lgb.pkl'
             ), 'rb'
         ) as file:
-            model_list = pickle.load(file)
+            model_list: list[lgb.Booster] = pickle.load(file)
 
         feature_importances = pd.DataFrame()
         feature_importances['feature'] = self.feature_list

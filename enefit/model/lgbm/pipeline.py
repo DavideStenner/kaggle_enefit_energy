@@ -3,8 +3,9 @@ from typing import Any
 from enefit.model.lgbm.training import LgbmTrainer
 from enefit.model.lgbm.explainer import LgbmExplainer
 from enefit.model.lgbm.initialization import LgbmInit
+from enefit.model.lgbm.inference import LgbmInference
 
-class LgbmPipeline(LgbmTrainer, LgbmExplainer):
+class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
     def __init__(self, 
             experiment_name:str, 
             params_lgb: dict[str, Any],
@@ -26,6 +27,9 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer):
         self.evaluate_score()
         self.get_feature_importance()
         
-    def __call__(self) -> None:
+    def train_explain(self) -> None:
         self.run_train()
         self.explain_model()
+    
+    def activate_inference(self) -> None:
+        self.load_model()

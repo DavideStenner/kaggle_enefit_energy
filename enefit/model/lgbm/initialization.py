@@ -1,7 +1,8 @@
 import os
 import polars as pl
+import lightgbm as lgb
 
-from typing import Any
+from typing import Any, Union
 
 class LgbmInit():
     def __init__(self, 
@@ -11,6 +12,9 @@ class LgbmInit():
             config_dict: dict[str, Any], 
             log_evaluation:int =1, fold_name: str = 'fold_info'
         ):
+        self.inference: bool = False
+        self.config_dict: dict[str, Any] = config_dict
+        
         self.experiment_path: str = os.path.join(
             config_dict['PATH_EXPERIMENT'],
             experiment_name
@@ -26,21 +30,15 @@ class LgbmInit():
             'row_id', 'current_fold'
         ]
         self.log_evaluation: int = log_evaluation
-        self.data: pl.LazyFrame = pl.scan_parquet(
-            os.path.join(
-                config_dict['PATH_PARQUET_DATA'],
-                'data.parquet'
-            )
-        )
+        self.data: pl.LazyFrame = None
         self.params_lgb: dict[str, Any] = params_lgb
         
-        self.model_list: list = []
+        self.model_list: list[lgb.Booster] = []
         self.progress_list: list = []
-
-        self.feature_list = [
-            col for col in self.data.columns
-            if col not in self.useless_col_list + [self.fold_name, self.target_col_name]
-        ]
+        self.best_result: dict[str, Union[int, float]] = None
+        
+        self.feature_list: list[str] = []
+        
         if not os.path.isdir(self.experiment_path):
             os.makedirs(self.experiment_path)
         
