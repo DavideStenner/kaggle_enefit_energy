@@ -85,8 +85,8 @@ class EnefitFeature(EnefitInit):
             self.location_data, on=['latitude', 'longitude']
         )
         number_null_join = self.forecast_weather_data.select('county').null_count()
-    
-        assert number_null_join.collect().item() == 0
+        
+        assert self._collect_item_utils(number_null_join) == 0
         
         original_col_dict = {
             col: self.forecast_weather_data.select(col).dtypes[0]
@@ -105,10 +105,16 @@ class EnefitFeature(EnefitInit):
         
         
         #pivot everything to get future weather data -> collect not working for pivot 
-        self.forecast_weather_data = self.forecast_weather_data.collect().pivot(
-            values=training_variable, 
-            index=index_variable, columns='hours_ahead'
-        ).lazy()
+        if self.inference:
+            self.forecast_weather_data = self.forecast_weather_data.pivot(
+                values=training_variable, 
+                index=index_variable, columns='hours_ahead'
+            )
+        else:
+            self.forecast_weather_data = self.forecast_weather_data.collect().pivot(
+                values=training_variable, 
+                index=index_variable, columns='hours_ahead'
+            ).lazy()
         
     def create_historical_weather_feature(self) -> None:
         #add date which is a key
@@ -141,7 +147,7 @@ class EnefitFeature(EnefitInit):
         )
         number_null_join = self.historical_weather_data.select('county').null_count()
     
-        assert number_null_join.collect().item() == 0
+        assert self._collect_item_utils(number_null_join) == 0
         self.historical_weather_data = (
             self.historical_weather_data
             .sort(
@@ -171,13 +177,21 @@ class EnefitFeature(EnefitInit):
         )
         
         #pivot everything to get future weather data -> collect not working for pivot 
-        self.historical_weather_data = self.historical_weather_data.collect().pivot(
-            values=training_variable, 
-            index=index_variable, columns='hours_ago'
-        ).lazy()
+        if self.inference:
+            self.historical_weather_data = self.historical_weather_data.pivot(
+                values=training_variable, 
+                index=index_variable, columns='hours_ago'
+            )
+        else:
+            self.historical_weather_data = self.historical_weather_data.collect().pivot(
+                values=training_variable, 
+                index=index_variable, columns='hours_ago'
+            ).lazy()
 
     def create_target_feature(self) -> None:
-        original_num_rows = self.target_data.select(pl.count()).collect().item()
+        original_num_rows = self._collect_item_utils(
+            self.target_data.select(pl.count())
+        )
         
         self.target_data = self.target_data.with_columns(
             pl.col('datetime').dt.date().cast(pl.Date).alias('date')
@@ -186,9 +200,12 @@ class EnefitFeature(EnefitInit):
         agg_by_list: list[str] = ['county', 'is_business', 'product_type']
         
         #get min block day, max block day to create full dataset
-        min_date = self.target_data.select('date').min().collect().item()
-        max_date = self.target_data.select('date').max().collect().item()
-        
+        min_date = self._collect_item_utils(
+            self.target_data.select('date').min()
+        )
+        max_date = self._collect_item_utils(
+            self.target_data.select('date').max()
+        )
         #calculate target -> date, county, is_business, product_type, is_consumption is row key
         revealed_targets_avg = (
             self.target_data.select(
@@ -198,14 +215,23 @@ class EnefitFeature(EnefitInit):
                 pl.col('target').mean().cast(pl.Float32)
             )
         )
-        #create full dataset so shift is correct
-        full_revealed_targets = (
-            #ensure that every data block id is inserted -> no lag error
-            pl.LazyFrame(
+        if self.inference:
+            full_date_combination = pl.DataFrame(
                 pl.date_range(min_date, max_date + pl.duration(days=1), interval='1d', eager=True)
                 .cast(pl.Date)
                 .alias('date')
-            )      
+            )
+            
+        else:
+            full_date_combination = pl.LazyFrame(
+                pl.date_range(min_date, max_date + pl.duration(days=1), interval='1d', eager=True)
+                .cast(pl.Date)
+                .alias('date')
+            )
+        #create full dataset so shift is correct
+        full_revealed_targets = (
+            #ensure that every data block id is inserted -> no lag error
+            full_date_combination
             .join(
                 self.target_data.select('is_consumption').unique(),
                 how='cross'
@@ -274,7 +300,9 @@ class EnefitFeature(EnefitInit):
             left_on = grouped_col_list,
             right_on = grouped_col_list
         )
-        final_num_rows = self.target_data.select(pl.count()).collect().item()
+        final_num_rows = self._collect_item_utils(
+            self.target_data.select(pl.count())
+        )
         assert final_num_rows == original_num_rows
         
         self.target_data = self.target_data.drop(
@@ -316,8 +344,12 @@ class EnefitFeature(EnefitInit):
             )
 
         #capture every holiday
-        min_year = self.train_data.select('year').min().collect().item()
-        max_year = self.train_data.select('year').max().collect().item()
+        min_year = self._collect_item_utils(
+            self.main_data.select('year').min()
+        )
+        max_year = self._collect_item_utils(
+            self.main_data.select('year').max()
+        )
                 
         estonian_holidays = list(
             holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
@@ -333,13 +365,12 @@ class EnefitFeature(EnefitInit):
             .cast(pl.UInt8).alias('holiday')
         )
         
-    def merge_all(self) -> None:
-        self.data = self.test_data if self.inference else self.train_data
-            
-        n_rows_begin = self.data.select(pl.count()).collect().item()
+    def merge_all(self) -> None:            
+        n_rows_begin = self._collect_item_utils(
+            self.main_data.select(pl.count())
+        )
 
         #Merge all datasets
-        
         #merge with client
         self.data = self.data.join(
             self.client_data, how='left', 
@@ -375,6 +406,8 @@ class EnefitFeature(EnefitInit):
             on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
         )
 
-        n_rows_end = self.data.select(pl.count()).collect().item()
+        n_rows_end = self._collect_item_utils(
+            self.data.select(pl.count())
+        )
 
         assert n_rows_begin == n_rows_end
