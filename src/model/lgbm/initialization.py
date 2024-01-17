@@ -45,13 +45,11 @@ class LgbmInit():
         if not os.path.isdir(self.experiment_path):
             os.makedirs(self.experiment_path)
 
-    def load_model(self) -> None:  
-        #load feature list
+    def load_model(self) -> None: 
         self.load_used_feature()
-            
         self.load_best_result()
-            
         self.load_model_list()
+        self.load_params()
   
     def save_progress_list(self) -> None:
         with open(
