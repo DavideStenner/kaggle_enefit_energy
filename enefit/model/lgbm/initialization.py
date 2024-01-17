@@ -1,4 +1,7 @@
 import os
+import json
+import pickle
+
 import polars as pl
 import lightgbm as lgb
 
@@ -41,4 +44,106 @@ class LgbmInit():
         
         if not os.path.isdir(self.experiment_path):
             os.makedirs(self.experiment_path)
+
+    def load_model(self) -> None:  
+        #load feature list
+        self.load_used_feature()
+            
+        self.load_best_result()
+            
+        self.load_model_list()
+  
+    def save_progress_list(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'progress_list_lgb.pkl'
+            ), 'wb'
+        ) as file:
+            pickle.dump(self.progress_list, file)
+
+    def load_progress_list(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'progress_list_lgb.pkl'
+            ), 'rb'
+        ) as file:
+            self.progress_list = pickle.load(file)
+
+    def save_params(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'params_lgb.json'
+            ), 'w'
+        ) as file:
+            json.dump(self.params_lgb, file)
+    
+    def load_params(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'params_lgb.json'
+            ), 'r'
+        ) as file:
+            self.params_lgb = json.load(file)
+    
+    def save_best_result(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_result_lgb.txt'
+            ), 'w'
+        ) as file:
+            json.dump(self.best_result, file)
         
+    def load_best_result(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_result_lgb.txt'
+            ), 'r'
+        ) as file:
+            self.best_result = json.load(file)
+            
+    def save_model_list(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'model_list_lgb.pkl'
+            ), 'wb'
+        ) as file:
+            pickle.dump(self.model_list, file)
+    
+    def load_model_list(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'model_list_lgb.pkl'
+            ), 'rb'
+        ) as file:
+            self.model_list = pickle.load(file)
+            
+    def save_used_feature(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'used_feature.txt'
+            ), 'w'
+        ) as file:
+            json.dump(
+                {
+                    'feature_model': self.feature_list
+                }, 
+                file
+            )
+            
+    def load_used_feature(self) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'used_feature.txt'
+            ), 'r'
+        ) as file:
+            self.feature_list = json.load(file)['feature_model']

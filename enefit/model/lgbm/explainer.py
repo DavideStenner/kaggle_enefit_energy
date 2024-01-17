@@ -1,9 +1,6 @@
 import os
-import json
-import pickle
 import pandas as pd
 import seaborn as sns
-import lightgbm as lgb
 import matplotlib.pyplot as plt
 
 from typing import Union
@@ -35,22 +32,10 @@ class LgbmExplainer(LgbmInit):
 
     def evaluate_score(self) -> None:    
         #load feature list
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'used_feature.txt'
-            ), 'r'
-        ) as file:
-            self.feature_list = json.load(file)
+        self.load_used_feature()
         
         # Find best epoch
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'progress_list_lgb.pkl'
-            ), 'rb'
-        ) as file:
-            progress_list = pickle.load(file)
+        self.load_progress_list()
 
         progress_dict = {
             'time': range(self.params_lgb['n_round']),
@@ -58,7 +43,7 @@ class LgbmExplainer(LgbmInit):
 
         progress_dict.update(
                 {
-                    f"{self.metric_eval}_fold_{i}": progress_list[i]['valid'][self.metric_eval]
+                    f"{self.metric_eval}_fold_{i}": self.progress_list[i]['valid'][self.metric_eval]
                     for i in range(self.n_fold)
                 }
             )
@@ -107,28 +92,16 @@ class LgbmExplainer(LgbmInit):
             best_epoch_lgb=best_epoch_lgb
         )
         
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'best_result_lgb.txt'
-            ), 'w'
-        ) as file:
-            json.dump(self.best_result, file)
+        self.save_best_result()
         
     def get_feature_importance(self) -> None:
    
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'model_list_lgb.pkl'
-            ), 'rb'
-        ) as file:
-            model_list: list[lgb.Booster] = pickle.load(file)
+        self.load_model_list()
 
         feature_importances = pd.DataFrame()
         feature_importances['feature'] = self.feature_list
 
-        for fold_, model in enumerate(model_list):
+        for fold_, model in enumerate(self.model_list):
             feature_importances[f'fold_{fold_}'] = model.feature_importance(
                 importance_type='gain', iteration=self.best_result['best_epoch']
             )

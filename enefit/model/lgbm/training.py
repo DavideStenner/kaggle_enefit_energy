@@ -1,7 +1,5 @@
 import os
 import gc
-import json
-import pickle
 import polars as pl
 import lightgbm as lgb
 
@@ -21,17 +19,7 @@ class LgbmTrainer(LgbmInit):
         ]
         
         #save feature list locally for later
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'used_feature.txt'
-            ), 'w'
-        ) as file:
-            json.dump(
-                {
-                    'feature_model': self.feature_list
-                }, file
-            )
+        self.save_used_feature()
             
     def access_fold(self, fold_: int) -> pl.LazyFrame:
         fold_data = self.data
@@ -110,26 +98,7 @@ class LgbmTrainer(LgbmInit):
             _ = gc.collect()
 
     def save_model(self)->None:
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'params_lgb.json'
-            ), 'w'
-        ) as file:
-            json.dump(self.params_lgb, file)
+        self.save_model_list()
+        self.save_params()
+        self.save_progress_list()
             
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'model_list_lgb.pkl'
-            ), 'wb'
-        ) as file:
-            pickle.dump(self.model_list, file)
-
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'progress_list_lgb.pkl'
-            ), 'wb'
-        ) as file:
-            pickle.dump(self.progress_list, file)

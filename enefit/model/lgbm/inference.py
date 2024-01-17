@@ -1,43 +1,9 @@
-import os
-import json
-import pickle
-
 import numpy as np
 import polars as pl
 
 from enefit.model.lgbm.initialization import LgbmInit
 
 class LgbmInference(LgbmInit):     
-    def load_model(self) -> None:  
-        #load feature list
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'used_feature.txt'
-            ), 'r'
-        ) as file:
-            self.feature_list = json.load(file)
-            
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'best_result_lgb.txt'
-            ), 'r'
-        ) as file:
-            self.best_result = json.load(file)
-            
-        with open(
-            os.path.join(
-                self.experiment_path,
-                'model_list_lgb.pkl'
-            ), 'rb'
-        ) as file:
-            self.model_list = pickle.load(file)
-
-    def activate_inference(self) -> None:
-        self.load_model()
-        self.inference = True
-        
     def predict(self, test_data: pl.DataFrame) -> None:
         assert self.inference
         

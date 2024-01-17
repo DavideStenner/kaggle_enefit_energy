@@ -19,6 +19,10 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
             log_evaluation=log_evaluation, fold_name=fold_name
         )
 
+    def activate_inference(self) -> None:
+        self.load_model()
+        self.inference = True
+        
     def run_train(self) -> None:
         self.train()
         self.save_model()
@@ -30,6 +34,4 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
     def train_explain(self) -> None:
         self.run_train()
         self.explain_model()
-    
-    def activate_inference(self) -> None:
-        self.load_model()
+        self.load_model
