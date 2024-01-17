@@ -106,7 +106,7 @@ class LgbmInit():
         ) as file:
             self.best_result = json.load(file)
             
-    def save_model_list(self) -> None:
+    def save_pickle_model_list(self) -> None:
         with open(
             os.path.join(
                 self.experiment_path,
@@ -115,7 +115,7 @@ class LgbmInit():
         ) as file:
             pickle.dump(self.model_list, file)
     
-    def load_model_list(self) -> None:
+    def load_pickle_model_list(self) -> None:
         with open(
             os.path.join(
                 self.experiment_path,
@@ -124,6 +124,18 @@ class LgbmInit():
         ) as file:
             self.model_list = pickle.load(file)
             
+    def load_model_list(self) -> None:
+        
+        self.model_list = [
+            lgb.Booster(
+                model_file=os.path.join(
+                    self.experiment_path,
+                    f'lgb_{fold_}.txt'
+                )
+            )
+            for fold_ in range(self.n_fold)
+        ]    
+           
     def save_used_feature(self) -> None:
         with open(
             os.path.join(

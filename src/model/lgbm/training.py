@@ -98,7 +98,7 @@ class LgbmTrainer(LgbmInit):
             _ = gc.collect()
 
     def save_model(self)->None:
-        self.save_model_list()
+        self.save_pickle_model_list()
         self.save_params()
         self.save_progress_list()
             

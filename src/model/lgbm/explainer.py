@@ -96,7 +96,7 @@ class LgbmExplainer(LgbmInit):
         
     def get_feature_importance(self) -> None:
    
-        self.load_model_list()
+        self.load_pickle_model_list()
 
         feature_importances = pd.DataFrame()
         feature_importances['feature'] = self.feature_list
