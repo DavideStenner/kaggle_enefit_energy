@@ -292,6 +292,9 @@ class EnefitImport(EnefitInit):
                 pl.col('latitude').cast(pl.Float32),
                 pl.col('longitude').cast(pl.Float32),
             )
+        #take out duplicates from train
+        ).unique(
+            ['latitude', 'longitude', 'datetime']
         )
         
     #TRAIN
