@@ -41,7 +41,8 @@ class LgbmInit():
         self.best_result: dict[str, Union[int, float]] = None
         
         self.feature_list: list[str] = []
-        
+    
+    def create_experiment_structure(self) -> None:
         if not os.path.isdir(self.experiment_path):
             os.makedirs(self.experiment_path)
 

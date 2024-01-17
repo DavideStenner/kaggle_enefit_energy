@@ -32,6 +32,7 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
         self.get_feature_importance()
         
     def train_explain(self) -> None:
+        self.create_experiment_structure()
         self.run_train()
         self.explain_model()
         self.load_model
