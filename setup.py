@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages, Command
 
-PKG_NAME = "enefit"
-VERSION = "0.0.1"
+PKG_NAME = "src"
+VERSION = "1.0.0"
 
 def _read_install_requires():
     with open('requirements.txt') as file:
@@ -34,7 +34,7 @@ setup(
     author=f"Davide Stenner",
     description="Package for competition https://www.kaggle.com/competitions/predict-energy-behavior-of-prosumers",
     packages=find_packages(PKG_NAME),
-    package_dir={"": "enefit"},
+    package_dir={"": "src"},
     include_package_data=True,
     zip_safe=False,
     install_requires=_read_install_requires(),

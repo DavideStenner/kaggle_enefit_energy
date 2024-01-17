@@ -1,6 +1,6 @@
 if __name__=='__main__':
-    from enefit.utils.import_utils import import_config
-    from enefit.preprocess import PreprocessPipeline
+    from src.utils.import_utils import import_config
+    from src.preprocess import PreprocessPipeline
 
     config_dict = import_config()
     

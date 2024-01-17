@@ -1,9 +1,9 @@
 from typing import Any
 
-from enefit.model.lgbm.training import LgbmTrainer
-from enefit.model.lgbm.explainer import LgbmExplainer
-from enefit.model.lgbm.initialization import LgbmInit
-from enefit.model.lgbm.inference import LgbmInference
+from src.model.lgbm.training import LgbmTrainer
+from src.model.lgbm.explainer import LgbmExplainer
+from src.model.lgbm.initialization import LgbmInit
+from src.model.lgbm.inference import LgbmInference
 
 class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
     def __init__(self, 

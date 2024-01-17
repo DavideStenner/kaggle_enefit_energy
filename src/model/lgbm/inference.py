@@ -1,7 +1,7 @@
 import numpy as np
 import polars as pl
 
-from enefit.model.lgbm.initialization import LgbmInit
+from src.model.lgbm.initialization import LgbmInit
 
 class LgbmInference(LgbmInit):     
     def predict(self, test_data: pl.DataFrame) -> None:

@@ -3,7 +3,7 @@ import polars as pl
 import pandas as pd
 
 from typing import Dict, OrderedDict, List
-from enefit.preprocess.initialization import EnefitInit
+from src.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
     def set_type_new_data(

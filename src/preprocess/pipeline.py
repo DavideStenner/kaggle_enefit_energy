@@ -3,10 +3,10 @@ import gc
 
 from typing import Any
 
-from enefit.preprocess.import_data import EnefitImport
-from enefit.preprocess.add_feature import EnefitFeature
-from enefit.preprocess.cv_fold import EnefitFoldCreator
-from enefit.preprocess.initialization import EnefitInit
+from src.preprocess.import_data import EnefitImport
+from src.preprocess.add_feature import EnefitFeature
+from src.preprocess.cv_fold import EnefitFoldCreator
+from src.preprocess.initialization import EnefitInit
 
 class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
 

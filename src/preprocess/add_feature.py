@@ -1,7 +1,7 @@
 import polars as pl
 import holidays
 
-from enefit.preprocess.initialization import EnefitInit
+from src.preprocess.initialization import EnefitInit
 
 class EnefitFeature(EnefitInit):
     

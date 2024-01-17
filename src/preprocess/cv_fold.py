@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 
 from typing import Iterator, Tuple
-from enefit.preprocess.initialization import EnefitInit
+from src.preprocess.initialization import EnefitInit
 
 def get_time_series_cross_val_splits(
     data: pd.DataFrame, time_col: str, num_fold: int, 

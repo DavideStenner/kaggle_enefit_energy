@@ -3,7 +3,7 @@ import gc
 import polars as pl
 import lightgbm as lgb
 
-from enefit.model.lgbm.initialization import LgbmInit
+from src.model.lgbm.initialization import LgbmInit
 
 class LgbmTrainer(LgbmInit):
     def _init_train(self) -> None:

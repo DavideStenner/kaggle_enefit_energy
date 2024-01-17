@@ -1,1 +1,0 @@
-from enefit.model.lgbm.pipeline import LgbmPipeline as ModelPipeline

@@ -1,1 +1,0 @@
-from enefit.preprocess.pipeline import EnefitPipeline as PreprocessPipeline

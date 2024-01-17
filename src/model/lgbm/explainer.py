@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from typing import Union
-from enefit.model.lgbm.initialization import LgbmInit
+from src.model.lgbm.initialization import LgbmInit
 
 class LgbmExplainer(LgbmInit):       
     def plot_train_curve(self, progress_df: pd.DataFrame, variable_to_plot: Union[str, list], name_plot: str, best_epoch_lgb:int) -> None:
