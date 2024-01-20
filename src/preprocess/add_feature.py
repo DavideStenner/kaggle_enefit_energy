@@ -196,8 +196,8 @@ class EnefitFeature(EnefitInit):
         self.target_data = self.target_data.with_columns(
             pl.col('datetime').dt.date().cast(pl.Date).alias('date')
         )
-        grouped_col_list: list[str] = ['date', 'county', 'is_business', 'product_type', 'is_consumption']
-        agg_by_list: list[str] = ['county', 'is_business', 'product_type']
+        agg_by_list: list[str] = ['county', 'is_business', 'product_type', 'is_consumption']
+        grouped_col_list: list[str] = ['date'] + agg_by_list
         
         #get min block day, max block day to create full dataset
         min_date = self._collect_item_utils(
@@ -206,7 +206,7 @@ class EnefitFeature(EnefitInit):
         max_date = self._collect_item_utils(
             self.target_data.select('date').max()
         )
-        #calculate target -> date, county, is_business, product_type, is_consumption is row key
+        #calculate target -> date, county, is_business, is_consumption is row key
         revealed_targets_avg = (
             self.target_data.select(
                 grouped_col_list + ['target']
@@ -232,17 +232,12 @@ class EnefitFeature(EnefitInit):
         full_revealed_targets = (
             #ensure that every data block id is inserted -> no lag error
             full_date_combination
-            .join(
-                self.target_data.select('is_consumption').unique(),
-                how='cross'
-            )
-            #add detail over county, is_business, product_type used to join aggregation
-            #to drop before joining with train data
+            #add detail over county, is_business, is_consumption
             .join(
                 self.target_data.select(agg_by_list).unique(),
                 how='cross'
             )
-        ).sort(['is_consumption', 'county', 'is_business', 'product_type', 'date'], descending=False)
+        ).sort(grouped_col_list, descending=False)
 
         full_revealed_targets = full_revealed_targets.join(
             revealed_targets_avg,
@@ -253,17 +248,21 @@ class EnefitFeature(EnefitInit):
         #add target shifted
         list_agg_operation_shift = [
             (
-                pl.col('target').shift(lag_).over(['county', 'is_business', 'product_type', 'is_consumption'])
+                pl.col('target').shift(lag_).over(agg_by_list)
                 .cast(pl.Float32).alias(f'target_lag_{lag_}')
             )
             for lag_ in range(2, self.target_n_lags+1)
         ]
 
-        for col in agg_by_list:
-            filter_col_for_agg = [filter_col for filter_col in agg_by_list if filter_col!=col]
+        col_to_aggregate_over: list = [col_agg for col_agg in agg_by_list if col_agg != 'is_consumption']
+        for col in col_to_aggregate_over:
+            col_aggregation_over = [
+                col_over for col_over in col_to_aggregate_over 
+                if col_over != col
+            ]
             
             #add date and is consumption to calculate aggregation by col
-            join_col_list = ['date', 'is_consumption'] + filter_col_for_agg
+            join_col_list = ['date', 'is_consumption'] + col_aggregation_over
             
             #add target averaged over ...
             agg_revealed_targets_avg = (
@@ -283,7 +282,9 @@ class EnefitFeature(EnefitInit):
             #add multiple avg target operation
             list_agg_operation_shift += [
                 (
-                    pl.col(f'avg_target_{col}').shift(lag_).over(['county', 'is_business', 'product_type', 'is_consumption'])
+                    pl.col(f'avg_target_{col}')
+                    .shift(lag_)
+                    .over(agg_by_list)
                     .cast(pl.Float32).alias(f'avg_target_{col}_lag_{lag_}')
                 )
                 for lag_ in self.agg_target_n_lags
@@ -297,8 +298,7 @@ class EnefitFeature(EnefitInit):
         self.target_data = self.target_data.join(
             full_revealed_targets, 
             how='left', 
-            left_on = grouped_col_list,
-            right_on = grouped_col_list
+            on = grouped_col_list,
         )
         final_num_rows = self._collect_item_utils(
             self.target_data.select(pl.count())
