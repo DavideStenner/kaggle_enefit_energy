@@ -390,17 +390,17 @@ class EnefitFeature(EnefitInit):
         )
         
         #merge with weather
-        self.data = self.data.join(
-            self.forecast_weather_data, how='left',
-            left_on = ['date', 'county'],
-            right_on=  ['date', 'county']
-        )
+        # self.data = self.data.join(
+        #     self.forecast_weather_data, how='left',
+        #     left_on = ['date', 'county'],
+        #     right_on=  ['date', 'county']
+        # )
 
-        #merge with gas
-        self.data = self.data.join(
-            self.historical_weather_data, how='left',
-            on = ['date', 'county'],
-        )
+        # #merge with gas
+        # self.data = self.data.join(
+        #     self.historical_weather_data, how='left',
+        #     on = ['date', 'county'],
+        # )
         self.data = self.data.join(
             self.target_data, how='left',
             on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
