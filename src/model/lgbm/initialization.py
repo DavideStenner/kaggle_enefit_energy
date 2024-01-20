@@ -30,7 +30,7 @@ class LgbmInit():
         self.useless_col_list: list[str] = [
             'datetime', 'date', 'date_order_kfold',
             'data_block_id', 'prediction_unit_id',
-            'row_id', 'current_fold'
+            'row_id', 'current_fold', 'year', 'month', 'quarter', 'week', 'ordinal_day'
         ]
         self.log_evaluation: int = log_evaluation
         self.data: pl.LazyFrame = None
