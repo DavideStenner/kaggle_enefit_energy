@@ -61,7 +61,7 @@ class LgbmTrainer(LgbmInit):
             train_rows = train_filtered.select(pl.count()).collect().item()
             test_rows = test_filtered.select(pl.count()).collect().item()
             
-            print(f'{train_rows} train rows; {test_rows} test rows')
+            print(f'{train_rows} train rows; {test_rows} test rows; {len(self.feature_list)} feature')
             
             train_matrix = lgb.Dataset(
                 train_filtered.select(self.feature_list).collect().to_numpy().astype('float32'),
