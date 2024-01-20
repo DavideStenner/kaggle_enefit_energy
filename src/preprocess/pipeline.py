@@ -34,9 +34,9 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         
         self.create_client_feature()
         self.create_electricity_feature()
-        self.create_forecast_weather_feature()
+        # self.create_forecast_weather_feature()
         self.create_gas_feature()
-        self.create_historical_weather_feature()
+        # self.create_historical_weather_feature()
         self.create_train_feature()
         self.create_target_feature()
         

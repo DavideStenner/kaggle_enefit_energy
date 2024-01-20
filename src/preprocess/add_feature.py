@@ -401,10 +401,10 @@ class EnefitFeature(EnefitInit):
         #     self.historical_weather_data, how='left',
         #     on = ['date', 'county'],
         # )
-        self.data = self.data.join(
-            self.target_data, how='left',
-            on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
-        )
+        # self.data = self.data.join(
+        #     self.target_data, how='left',
+        #     on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
+        # )
 
         n_rows_end = self._collect_item_utils(
             self.data.select(pl.count())
