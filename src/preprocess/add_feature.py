@@ -366,6 +366,7 @@ class EnefitFeature(EnefitInit):
         )
         
     def merge_all(self) -> None:            
+        print('Merging feature')
         n_rows_begin = self._collect_item_utils(
             self.main_data.select(pl.count())
         )
