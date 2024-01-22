@@ -151,7 +151,7 @@ class EnefitFeature(EnefitInit):
             self.location_data, on=['latitude', 'longitude']
         )
     
-        self.forecast_weather_data = self.historical_weather_data.filter(pl.col("county").is_not_null())
+        self.historical_weather_data = self.historical_weather_data.filter(pl.col("county").is_not_null())
         
         self.historical_weather_data = (
             self.historical_weather_data
@@ -206,7 +206,7 @@ class EnefitFeature(EnefitInit):
         target_feature = self.target_data
 
         
-        # add lag with aggregation on date
+        # #add lag with aggregation on date
         # aggregation_by_date = (
         #     self.target_data.select(
         #         key_list + ['date', 'target']
@@ -358,7 +358,7 @@ class EnefitFeature(EnefitInit):
         #     right_on=  ['date', 'county']
         # )
 
-        # #merge with historical
+        #merge with historical
         # self.data = self.data.join(
         #     self.historical_weather_data, how='left',
         #     on = ['date', 'county'],
