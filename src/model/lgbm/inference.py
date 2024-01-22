@@ -17,4 +17,4 @@ class LgbmInference(LgbmInit):
                 num_iteration = self.best_result['best_epoch']
             )/self.n_fold
             
-        return prediction_
+        return prediction_.clip(0)
