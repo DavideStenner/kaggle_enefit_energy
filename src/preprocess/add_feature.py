@@ -1,6 +1,7 @@
 import polars as pl
 import holidays
 
+from typing import Dict, Union
 from src.preprocess.initialization import EnefitInit
 
 class EnefitFeature(EnefitInit):
