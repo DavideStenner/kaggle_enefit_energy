@@ -205,7 +205,7 @@ class EnefitFeature(EnefitInit):
         target_feature = self.target_data
 
         
-        #add lag with aggregation on date
+        # add lag with aggregation on date
         # aggregation_by_date = (
         #     self.target_data.select(
         #         key_list + ['date', 'target']
@@ -216,7 +216,8 @@ class EnefitFeature(EnefitInit):
         # )
         
         
-        # aggregation_by_dict, join_by_dict = {}, {}   
+        # aggregation_by_dict: Dict[str, Union[pl.LazyFrame, pl.DataFrame]] = {}
+        # join_by_dict: Dict[str, list] = {}   
         
         # for col in key_list:
         #     other_key_list = [x for x in key_list if x != col]
@@ -245,7 +246,7 @@ class EnefitFeature(EnefitInit):
                 on = key_list + ['datetime'], how='left'
             )
 
-            # self.target_data = self.target_data.join(
+            # target_feature = target_feature.join(
             #     aggregation_by_date.with_columns(
             #         pl.col("date") + pl.duration(hours=day_lag)
             #     ).rename({"target": f"avg_day_target_lag_{day_lag}"}),
@@ -253,7 +254,7 @@ class EnefitFeature(EnefitInit):
             # )
             
             # for col in key_list:
-            #     self.target_data = self.target_data.join(
+            #     target_feature = target_feature.join(
             #         aggregation_by_dict[col].with_columns(
             #             pl.col("datetime") + pl.duration(hours=day_lag * 24)
             #         ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
@@ -351,17 +352,17 @@ class EnefitFeature(EnefitInit):
         )
         
         #merge with weather
-        self.data = self.data.join(
-            self.forecast_weather_data, how='left',
-            left_on = ['date', 'county'],
-            right_on=  ['date', 'county']
-        )
+        # self.data = self.data.join(
+        #     self.forecast_weather_data, how='left',
+        #     left_on = ['date', 'county'],
+        #     right_on=  ['date', 'county']
+        # )
 
-        #merge with gas
-        self.data = self.data.join(
-            self.historical_weather_data, how='left',
-            on = ['date', 'county'],
-        )
+        # #merge with historical
+        # self.data = self.data.join(
+        #     self.historical_weather_data, how='left',
+        #     on = ['date', 'county'],
+        # )
         self.data = self.data.join(
             self.target_data, how='left',
             on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
