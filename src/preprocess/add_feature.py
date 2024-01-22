@@ -262,7 +262,7 @@ class EnefitFeature(EnefitInit):
             #     )
 
         final_num_rows = self._collect_item_utils(
-            self.target_data.select(pl.count())
+            target_feature.select(pl.count())
         )
         assert final_num_rows == original_num_rows
         
