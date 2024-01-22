@@ -29,7 +29,6 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
             )
         )
     def create_feature(self) -> None:
-        print('Creating feature')
         _ = gc.collect()
         self.copy_starting_dataset()
         
