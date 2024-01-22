@@ -136,7 +136,8 @@ class EnefitImport(EnefitInit):
             ["date", "county", "is_business", "product_type"]
         )
         self.starting_gas_data = pl.concat(
-            [self.starting_gas_data, gas_data_new]).unique(
+            [self.starting_gas_data, gas_data_new]
+        ).unique(
             ["forecast_date"]
         )
         self.starting_electricity_data = pl.concat(
@@ -313,6 +314,11 @@ class EnefitImport(EnefitInit):
             )
         )
 
+    def filter_train(self) -> None:
+        self.main_data = self.main_data.filter(
+            pl.col("datetime") >= pd.to_datetime("2022-01-01")
+        )
+        
     def memorize_starting_dataset_schema(self) -> None:
         self.starting_dataset_schema_dict: Dict[str, OrderedDict] = {
             'client': self.starting_client_data.schema,
@@ -341,6 +347,8 @@ class EnefitImport(EnefitInit):
         self.downcast_historical_weather_data()
         self.downcast_location()
         self.downcast_train()
+        
+        self.filter_train()
         
         self.create_target_data()
         
