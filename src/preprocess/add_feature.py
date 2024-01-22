@@ -61,6 +61,11 @@ class EnefitFeature(EnefitInit):
         self.electricity_data = self.electricity_data.drop('forecast_date')
             
     def create_forecast_weather_feature(self) -> None:
+        #filter hours ahead
+        self.forecast_weather_data = self.forecast_weather_data.filter(
+            (pl.col("hours_ahead") >= 22) & 
+            (pl.col("hours_ahead") <= 45)
+        )
         #add date which is a key
         self.forecast_weather_data = self.forecast_weather_data.with_columns(
             (pl.col('origin_datetime') + pl.duration(days=1)).cast(pl.Date).alias('date')
@@ -84,9 +89,8 @@ class EnefitFeature(EnefitInit):
         self.forecast_weather_data = self.forecast_weather_data.join(
             self.location_data, on=['latitude', 'longitude']
         )
-        number_null_join = self.forecast_weather_data.select('county').null_count()
         
-        assert self._collect_item_utils(number_null_join) == 0
+        self.forecast_weather_data = self.forecast_weather_data.filter(pl.col("county").is_not_null())
         
         original_col_dict = {
             col: self.forecast_weather_data.select(col).dtypes[0]
@@ -145,9 +149,9 @@ class EnefitFeature(EnefitInit):
         self.historical_weather_data = self.historical_weather_data.join(
             self.location_data, on=['latitude', 'longitude']
         )
-        number_null_join = self.historical_weather_data.select('county').null_count()
     
-        assert self._collect_item_utils(number_null_join) == 0
+        self.forecast_weather_data = self.historical_weather_data.filter(pl.col("county").is_not_null())
+        
         self.historical_weather_data = (
             self.historical_weather_data
             .sort(
