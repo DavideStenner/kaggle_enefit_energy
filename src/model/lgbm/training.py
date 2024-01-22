@@ -63,6 +63,8 @@ class LgbmTrainer(LgbmInit):
             
             print(f'{train_rows} train rows; {test_rows} test rows; {len(self.feature_list)} feature')
             
+            assert self.target_col_name not in self.feature_list
+            
             train_matrix = lgb.Dataset(
                 train_filtered.select(self.feature_list).collect().to_numpy().astype('float32'),
                 train_filtered.select(self.target_col_name).collect().to_numpy().reshape((-1)).astype('float32')
