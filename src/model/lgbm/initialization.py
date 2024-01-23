@@ -15,10 +15,10 @@ class LgbmInit():
             config_dict: dict[str, Any], 
             log_evaluation:int =1, fold_name: str = 'fold_info'
         ):
-        if config_dict['INFERENCE_SETUP'] not in ['single', 'blend']:
+        if params_lgb['inference_setup'] not in ['single', 'blend']:
             raise ValueError
         
-        self.inference_setup: str = config_dict['INFERENCE_SETUP']
+        self.inference_setup: str = params_lgb['inference_setup']
         self.inference: bool = False
         self.config_dict: dict[str, Any] = config_dict
         
