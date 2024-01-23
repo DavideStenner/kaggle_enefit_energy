@@ -240,9 +240,9 @@ class EnefitFeature(EnefitInit):
                     self.target_data
                     .select(key_list + ['datetime', 'target'])
                     .with_columns(
-                        pl.col("datetime") + pl.duration(days=day_lag),
-                        pl.col('target').cast(pl.Float32).alias(f"target_lag_{day_lag}")
+                        pl.col("datetime") + pl.duration(days=day_lag)
                     )
+                    .rename({"target": f"target_lag_{day_lag}"})
                 ),
                 on = key_list + ['datetime'], how='left'
             )
