@@ -9,7 +9,7 @@ class LgbmInference(LgbmInit):
         
         test_data = test_data.select(self.feature_list).to_pandas().to_numpy(dtype='float32')
         
-        prediction_ = np.zeros((test_data.shape[0]))
+        prediction_ = np.zeros((test_data.shape[0]), dtype='float64')
         
         for model in self.model_list:
             prediction_ += model.predict(
