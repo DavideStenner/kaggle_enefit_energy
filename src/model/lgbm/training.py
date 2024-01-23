@@ -66,13 +66,13 @@ class LgbmTrainer(LgbmInit):
             assert self.target_col_name not in self.feature_list
             
             train_matrix = lgb.Dataset(
-                train_filtered.select(self.feature_list).collect().to_numpy().astype('float32'),
-                train_filtered.select(self.target_col_name).collect().to_numpy().reshape((-1)).astype('float32')
+                train_filtered.select(self.feature_list).collect().to_pandas().to_numpy('float32'),
+                train_filtered.select(self.target_col_name).collect().to_pandas().to_numpy('float64').reshape((-1))
             )
             
             test_matrix = lgb.Dataset(
-                test_filtered.select(self.feature_list).collect().to_numpy().astype('float32'),
-                test_filtered.select(self.target_col_name).collect().to_numpy().reshape((-1)).astype('float32')
+                test_filtered.select(self.feature_list).collect().to_pandas().to_numpy('float32'),
+                test_filtered.select(self.target_col_name).collect().to_pandas().to_numpy('float64').reshape((-1))
             )
 
             print('Start training')

@@ -307,7 +307,7 @@ class EnefitImport(EnefitInit):
                 pl.col('county').cast(pl.UInt8),
                 pl.col('is_business').cast(pl.UInt8),
                 pl.col('product_type').cast(pl.UInt8),
-                pl.col('target').cast(pl.Float32),
+                pl.col('target').cast(pl.Float64),
                 pl.col('is_consumption').cast(pl.UInt8),
                 pl.col('datetime').str.to_datetime(),
                 pl.col('row_id').cast(pl.UInt32)

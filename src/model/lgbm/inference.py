@@ -7,7 +7,7 @@ class LgbmInference(LgbmInit):
     def predict(self, test_data: pl.DataFrame) -> None:
         assert self.inference
         
-        test_data = test_data.select(self.feature_list).to_numpy().astype('float32')
+        test_data = test_data.select(self.feature_list).to_pandas().to_numpy(dtype='float32')
         
         prediction_ = np.zeros((test_data.shape[0]))
         
