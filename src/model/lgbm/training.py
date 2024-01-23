@@ -7,14 +7,14 @@ from src.model.lgbm.initialization import LgbmInit
 
 class LgbmTrainer(LgbmInit):
     def _init_train(self) -> None:
-        self.data = pl.scan_parquet(
+        data = pl.scan_parquet(
             os.path.join(
                 self.config_dict['PATH_PARQUET_DATA'],
                 'data.parquet'
             )
         )
         self.feature_list = [
-            col for col in self.data.columns
+            col for col in data.columns
             if col not in self.useless_col_list + [self.fold_name, self.target_col_name]
         ]
         
@@ -22,7 +22,12 @@ class LgbmTrainer(LgbmInit):
         self.save_used_feature()
             
     def access_fold(self, fold_: int) -> pl.LazyFrame:
-        fold_data = self.data
+        fold_data = pl.scan_parquet(
+            os.path.join(
+                self.config_dict['PATH_PARQUET_DATA'],
+                'data.parquet'
+            )
+        )
         fold_data = fold_data.with_columns(
             (
                 pl.col('fold_info').str.split(', ')
@@ -58,6 +63,15 @@ class LgbmTrainer(LgbmInit):
                 (pl.col('current_fold') == 'v') &
                 (pl.col('target').is_not_null())
             )
+            
+            assert len(
+                set(
+                    train_filtered.select('date').collect().to_series().to_list()
+                ).intersection(
+                    test_filtered.select('date').collect().to_series().to_list()
+                )
+            ) == 0
+            
             train_rows = train_filtered.select(pl.count()).collect().item()
             test_rows = test_filtered.select(pl.count()).collect().item()
             
