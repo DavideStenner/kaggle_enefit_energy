@@ -35,4 +35,4 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
         self.create_experiment_structure()
         self.run_train()
         self.explain_model()
-        self.load_model
+        self.all_data_train()

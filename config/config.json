@@ -4,5 +4,6 @@
     "PATH_MAPPING_DATA": "data/mapping",
     "PATH_EXPERIMENT": "experiment",
     "N_FOLD": 5,
-    "TARGET_COL": "target"
+    "TARGET_COL": "target",
+    "INFERENCE_SETUP": "single"
 }

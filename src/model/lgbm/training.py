@@ -115,6 +115,37 @@ class LgbmTrainer(LgbmInit):
             
             _ = gc.collect()
 
+    def all_data_train(self) -> None:
+        
+        data = pl.scan_parquet(
+            os.path.join(
+                self.config_dict['PATH_PARQUET_DATA'],
+                'data.parquet'
+            )
+        ).filter(
+            (pl.col('target').is_not_null())
+        )
+        train_matrix = lgb.Dataset(
+            data.select(self.feature_list).collect().to_pandas().to_numpy('float32'),
+            data.select(self.target_col_name).collect().to_pandas().to_numpy('float64').reshape((-1))
+        )
+        
+        print('Start training model on all data with selected epoch')
+        model = lgb.train(
+            params=self.params_lgb,
+            train_set=train_matrix, 
+            feature_name=self.feature_list,
+            categorical_feature=self.categorical_col_list,
+            num_boost_round=self.best_result['best_epoch'],
+        )
+
+        model.save_model(
+            os.path.join(
+                self.experiment_path,
+                f'lgb_all.txt'
+            )
+        )
+
     def save_model(self)->None:
         self.save_pickle_model_list()
         self.save_params()

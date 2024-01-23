@@ -15,6 +15,10 @@ class LgbmInit():
             config_dict: dict[str, Any], 
             log_evaluation:int =1, fold_name: str = 'fold_info'
         ):
+        if config_dict['INFERENCE_SETUP'] not in ['single', 'blend']:
+            raise ValueError
+        
+        self.inference_setup: str = config_dict['INFERENCE_SETUP']
         self.inference: bool = False
         self.config_dict: dict[str, Any] = config_dict
         
@@ -42,6 +46,7 @@ class LgbmInit():
         self.data: pl.LazyFrame = None
         self.params_lgb: dict[str, Any] = params_lgb
         
+        self.model_all_data: lgb.Booster = None
         self.model_list: list[lgb.Booster] = []
         self.progress_list: list = []
         self.best_result: dict[str, Union[int, float]] = None
@@ -57,7 +62,8 @@ class LgbmInit():
         self.load_best_result()
         self.load_model_list()
         self.load_params()
-  
+        self.load_model_all_data()
+        
     def save_progress_list(self) -> None:
         with open(
             os.path.join(
@@ -129,7 +135,14 @@ class LgbmInit():
             ), 'rb'
         ) as file:
             self.model_list = pickle.load(file)
-            
+
+    def load_model_all_data(self) -> None:
+        self.model_all_data = lgb.Booster(
+            model_file=os.path.join(
+                self.experiment_path,
+                f'lgb_all.txt'
+            )
+        )
     def load_model_list(self) -> None:
         
         self.model_list = [
