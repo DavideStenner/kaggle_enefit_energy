@@ -249,7 +249,7 @@ class EnefitFeature(EnefitInit):
 
             # target_feature = target_feature.join(
             #     aggregation_by_date.with_columns(
-            #         pl.col("date") + pl.duration(hours=day_lag)
+            #         pl.col("date") + pl.duration(days=day_lag)
             #     ).rename({"target": f"avg_day_target_lag_{day_lag}"}),
             #     on = key_list + ['date'], how='left'
             # )
@@ -257,7 +257,7 @@ class EnefitFeature(EnefitInit):
             # for col in key_list:
             #     target_feature = target_feature.join(
             #         aggregation_by_dict[col].with_columns(
-            #             pl.col("datetime") + pl.duration(hours=day_lag * 24)
+            #             pl.col("datetime") + pl.duration(days=day_lag)
             #         ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
             #         on = join_by_dict[col] + ['datetime'], how='left'
             #     )
