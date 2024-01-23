@@ -12,13 +12,17 @@ class LgbmInit():
             experiment_name:str, 
             params_lgb: dict[str, Any],
             metric_eval: str,
-            config_dict: dict[str, Any], 
+            config_dict: dict[str, Any], inference_setup: str=None,
             log_evaluation:int =1, fold_name: str = 'fold_info'
         ):
-        if params_lgb['inference_setup'] not in ['single', 'blend']:
-            raise ValueError
+        if inference_setup is None:
+            self.inference_setup = 'blend'
+        else:
+            if inference_setup not in ['single', 'blend']:
+                raise ValueError
+            else:
+                self.inference_setup = inference_setup
         
-        self.inference_setup: str = params_lgb['inference_setup']
         self.inference: bool = False
         self.config_dict: dict[str, Any] = config_dict
         
