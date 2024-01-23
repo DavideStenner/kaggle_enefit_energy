@@ -32,6 +32,12 @@ class LgbmInit():
             'data_block_id', 'prediction_unit_id',
             'row_id', 'current_fold', 'year', 'month', 'quarter', 'week', 'ordinal_day'
         ]
+        self.categorical_col_list: list[str] = [
+            "county",
+            "is_business",
+            "product_type",
+            "is_consumption",
+        ]
         self.log_evaluation: int = log_evaluation
         self.data: pl.LazyFrame = None
         self.params_lgb: dict[str, Any] = params_lgb

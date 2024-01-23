@@ -93,6 +93,8 @@ class LgbmTrainer(LgbmInit):
             model = lgb.train(
                 params=self.params_lgb,
                 train_set=train_matrix, 
+                feature_name=self.feature_list,
+                categorical_feature=self.categorical_col_list,
                 num_boost_round=self.params_lgb['n_round'],
                 valid_sets=[test_matrix],
                 valid_names=['valid'],
