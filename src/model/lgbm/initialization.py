@@ -38,7 +38,8 @@ class LgbmInit():
         self.useless_col_list: list[str] = [
             'datetime', 'date', 'date_order_kfold',
             'data_block_id', 'prediction_unit_id',
-            'row_id', 'current_fold', 'year', 'month', 'quarter', 'week', 'ordinal_day'
+            'row_id', 'current_fold', 'year', 'month', 
+            'quarter', 'week', 'ordinal_day', 'hour'
         ]
         self.categorical_col_list: list[str] = [
             "county",
