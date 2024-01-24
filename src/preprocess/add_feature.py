@@ -1,3 +1,4 @@
+import numpy as np
 import polars as pl
 import holidays
 
@@ -20,18 +21,18 @@ class EnefitFeature(EnefitInit):
         self.client_data = self.client_data.with_columns(
             #clean date column
             (pl.col("date") + pl.duration(days=2)).cast(pl.Date),
-            (
-                pl.col('eic_count').mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.UInt16)
-                .alias('eic_count_mean')
-            ),
-            (
-                pl.col('installed_capacity').mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.Float32)
-                .alias('installed_capacity_mean')
-            )
+            # (
+            #     pl.col('eic_count').mean()
+            #     .over(['date', 'product_type', 'county', 'is_business'])
+            #     .cast(pl.UInt16)
+            #     .alias('eic_count_mean')
+            # ),
+            # (
+            #     pl.col('installed_capacity').mean()
+            #     .over(['date', 'product_type', 'county', 'is_business'])
+            #     .cast(pl.Float32)
+            #     .alias('installed_capacity_mean')
+            # )
         )
         
     def create_gas_feature(self) -> None:
@@ -283,6 +284,13 @@ class EnefitFeature(EnefitInit):
             
             pl.col('datetime').dt.ordinal_day().cast(pl.UInt16).alias('ordinal_day'),
             pl.col('datetime').dt.weekday().cast(pl.UInt8).alias('weekday'),
+            
+        )
+        self.main_data = self.main_data.with_columns(
+            (np.pi * pl.col("ordinal_day") / 183).sin().cast(pl.Float32).alias("sin(ordinal_day)"),
+            (np.pi * pl.col("ordinal_day") / 183).cos().cast(pl.Float32).alias("cos(ordinal_day)"),
+            (np.pi * pl.col("hour") / 12).sin().cast(pl.Float32).alias("sin(hour)"),
+            (np.pi * pl.col("hour") / 12).cos().cast(pl.Float32).alias("cos(hour)")
         )
         
         if not self.inference:
@@ -318,14 +326,14 @@ class EnefitFeature(EnefitInit):
         )
 
         #add holiday as a dummy 0, 1 variable
-        self.main_data = self.main_data.with_columns(
-            pl.when(
-                pl.col('date')
-                .is_in(estonian_holidays)
-            ).then(pl.lit(1))
-            .otherwise(pl.lit(0))
-            .cast(pl.UInt8).alias('holiday')
-        )
+        # self.main_data = self.main_data.with_columns(
+        #     pl.when(
+        #         pl.col('date')
+        #         .is_in(estonian_holidays)
+        #     ).then(pl.lit(1))
+        #     .otherwise(pl.lit(0))
+        #     .cast(pl.UInt8).alias('holiday')
+        # )
         
     def merge_all(self) -> None:            
         n_rows_begin = self._collect_item_utils(
@@ -340,16 +348,16 @@ class EnefitFeature(EnefitInit):
         )
                 
         #merge with electricity
-        self.data = self.data.join(
-            self.electricity_data, how='left',
-            on=['datetime'],
-        )
+        # self.data = self.data.join(
+        #     self.electricity_data, how='left',
+        #     on=['datetime'],
+        # )
         
         #merge with gas
-        self.data = self.data.join(
-            self.gas_data, how='left',
-            on=['date']
-        )
+        # self.data = self.data.join(
+        #     self.gas_data, how='left',
+        #     on=['date']
+        # )
         
         #merge with weather
         # self.data = self.data.join(
