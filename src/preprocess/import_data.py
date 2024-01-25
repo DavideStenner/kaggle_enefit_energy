@@ -341,6 +341,7 @@ class EnefitImport(EnefitInit):
     
     def import_all(self) -> None:
         self.scan_all_dataset()
+        self.filter_train()
         
         self.downcast_client()
         self.downcast_electricity()
