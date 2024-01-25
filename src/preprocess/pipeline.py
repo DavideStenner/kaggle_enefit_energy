@@ -45,6 +45,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.merge_all()
         
     def preprocess_train(self) -> None:
+        self.filter_train()
         self.create_feature()
         self.merge_all()
         
