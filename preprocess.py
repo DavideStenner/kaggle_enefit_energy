@@ -7,6 +7,6 @@ if __name__=='__main__':
     enefit_preprocessor = PreprocessPipeline(
         config_dict=config_dict, 
         target_n_lags=2, agg_target_n_lags=[2], 
-        embarko_skip=0
+        embarko_skip=60
     )
     enefit_preprocessor()
