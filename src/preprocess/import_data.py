@@ -82,24 +82,26 @@ class EnefitImport(EnefitInit):
             raise ValueError('Call begin_inference first...')
         
         #ensure new data has correct dtype
-        (
-            client_data_new,
-            gas_data_new,
-            electricity_data_new,
-            forecast_weather_data_new,
-            historical_weather_data_new,
-            target_data_new,
-            test_data
-        ) = self.set_type_new_data(
-            client_data_new,
-            gas_data_new,
-            electricity_data_new,
-            forecast_weather_data_new,
-            historical_weather_data_new,
-            target_data_new,
-            test_data
+        # (
+        #     client_data_new,
+        #     gas_data_new,
+        #     electricity_data_new,
+        #     forecast_weather_data_new,
+        #     historical_weather_data_new,
+        #     target_data_new,
+        #     test_data
+        # ) = self.set_type_new_data(
+        #     client_data_new,
+        #     gas_data_new,
+        #     electricity_data_new,
+        #     forecast_weather_data_new,
+        #     historical_weather_data_new,
+        #     target_data_new,
+        #     test_data
+        # )
+        test_data = test_data.rename(
+            columns={"prediction_datetime": "datetime"}
         )
-        
         test_data = pl.from_pandas(
             test_data[self.starting_dataset_column_dict['test']], 
             schema_overrides=self.starting_dataset_schema_dict['train']
@@ -146,7 +148,7 @@ class EnefitImport(EnefitInit):
         
         self.starting_forecast_weather_data = pl.concat(
             [self.starting_forecast_weather_data, forecast_weather_data_new]
-        ).unique(["origin_datetime", "hours_ahead", "latitude", "longitude", "hours_ahead"])
+        ).unique(["forecast_datetime", "latitude", "longitude", "hours_ahead"])
         
         self.starting_historical_weather_data = pl.concat(
             [self.starting_historical_weather_data, historical_weather_data_new]
