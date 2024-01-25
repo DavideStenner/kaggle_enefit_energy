@@ -115,7 +115,7 @@ class LgbmTrainer(LgbmInit):
             
             _ = gc.collect()
 
-    def all_data_train(self) -> None:
+    def all_data_train(self, num_round: int) -> None:
         
         data = pl.scan_parquet(
             os.path.join(
@@ -136,7 +136,7 @@ class LgbmTrainer(LgbmInit):
             train_set=train_matrix, 
             feature_name=self.feature_list,
             categorical_feature=self.categorical_col_list,
-            num_boost_round=self.best_result['best_epoch'],
+            num_boost_round=num_round,
         )
 
         model.save_model(
