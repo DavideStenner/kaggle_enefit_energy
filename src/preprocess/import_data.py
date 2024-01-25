@@ -341,7 +341,6 @@ class EnefitImport(EnefitInit):
     
     def import_all(self) -> None:
         self.scan_all_dataset()
-        self.filter_train()
         
         self.downcast_client()
         self.downcast_electricity()
@@ -350,7 +349,8 @@ class EnefitImport(EnefitInit):
         self.downcast_historical_weather_data()
         self.downcast_location()
         self.downcast_train()
-                
+        self.filter_train()
+
         self.create_target_data()
         
         self.memorize_starting_dataset_schema()
