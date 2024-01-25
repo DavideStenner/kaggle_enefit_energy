@@ -4,6 +4,7 @@ data/original_data/*
 !data/original_data/
 enefit/*.egg-info/*
 test/*
+data/local/*
 data/parquet_dataset/*
 !data/parquet_dataset/
 !experiment/
