@@ -148,7 +148,7 @@ class EnefitImport(EnefitInit):
         
         self.starting_forecast_weather_data = pl.concat(
             [self.starting_forecast_weather_data, forecast_weather_data_new]
-        ).unique(["forecast_datetime", "latitude", "longitude", "hours_ahead"])
+        ).unique(["origin_datetime", "latitude", "longitude", "hours_ahead"])
         
         self.starting_historical_weather_data = pl.concat(
             [self.starting_historical_weather_data, historical_weather_data_new]
