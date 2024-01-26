@@ -9,6 +9,6 @@ if __name__=='__main__':
         experiment_name=experiment_name,
         params_lgb=params_model,
         config_dict=config_dict,
-        metric_eval='l1'
+        metric_eval='l1', log_evaluation=25
     )
     trainer.train_explain()
