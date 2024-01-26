@@ -2,6 +2,7 @@ import numpy as np
 import polars as pl
 import holidays
 
+from datetime import timedelta
 from typing import Dict, Union
 from src.preprocess.initialization import EnefitInit
 
@@ -197,15 +198,24 @@ class EnefitFeature(EnefitInit):
     def create_target_feature(self) -> None:
         key_list: list[str] = ['county', 'is_business', 'product_type', 'is_consumption']
 
-        original_num_rows = self._collect_item_utils(
-            self.target_data.select(pl.count())
-        )
-
-        self.target_data = self.target_data.with_columns(
+        #this dataset is used to calculate the lag
+        target_data = self.target_data.with_columns(
             pl.col('datetime').dt.date().cast(pl.Date).alias('date')
         )
-        target_feature = self.target_data
-
+        
+        #create join target df -> create more date so i can get all usable lag
+        #fix to main bugc
+        #this dataset is used to join to main_data
+        target_feature = (
+            target_data.select(key_list).unique()
+            .join(
+                pl.datetime_range(
+                    target_data['datetime'].min() - timedelta(days=self.target_n_lags+1),
+                    target_data['datetime'].max() + timedelta(days=self.target_n_lags+1),
+                    timedelta(hours=1), eager=True
+                ).to_frame('datetime'), how='cross'
+            )
+        )
         
         # #add lag with aggregation on date
         # aggregation_by_date = (
@@ -238,7 +248,7 @@ class EnefitFeature(EnefitInit):
             #add normal value
             target_feature = target_feature.join(
                 (
-                    self.target_data
+                    target_data
                     .select(key_list + ['datetime', 'target'])
                     .with_columns(
                         pl.col("datetime") + pl.duration(days=day_lag)
@@ -262,14 +272,15 @@ class EnefitFeature(EnefitInit):
             #         ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
             #         on = join_by_dict[col] + ['datetime'], how='left'
             #     )
-
-        final_num_rows = self._collect_item_utils(
-            target_feature.select(pl.count())
-        )
-        assert final_num_rows == original_num_rows
-        
+        col_to_check_for_useless_join = [
+            col 
+            for col in target_feature.columns 
+            if col not in key_list + ['datetime']
+        ]
         self.target_data = target_feature.drop(
             ['target', 'date']
+        ).filter(
+            ~pl.any_horizontal(pl.all(col_to_check_for_useless_join).is_null())
         )
 
     def create_train_feature(self) -> None:
