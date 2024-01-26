@@ -318,17 +318,58 @@ class EnefitFeature(EnefitInit):
                     on = join_by_dict[col] + ['datetime'], how='left'
                 )
 
-        col_to_check_for_useless_join = [
-            col 
-            for col in target_feature.columns 
-            if col not in key_list + ['datetime']
-        ]
+        target_lag_for_stats = [f"target_lag_{day_lag}" for day_lag in range(2, self.target_n_lags+1)]
+        
+        #add mean lag over target
+        target_feature = target_feature.with_columns(
+            #target lag mean
+            (
+                pl.concat_list(pl.col(target_lag_for_stats))
+                .list.mean().cast(pl.Float32).alias('target_mean_all_lag')
+            ),
+            (
+                pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                .list.mean().cast(pl.Float32).alias('target_mean_all_lag_2_4')
+            ),
+            #target lag min
+            (
+                pl.concat_list(pl.col(target_lag_for_stats))
+                .list.min().cast(pl.Float32).alias('target_min_all_lag')
+            ),
+            (
+                pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                .list.min().cast(pl.Float32).alias('target_min_all_lag_2_4')
+            ),
+            #target lag max
+            (
+                pl.concat_list(pl.col(target_lag_for_stats))
+                .list.max().cast(pl.Float32).alias('target_max_all_lag')
+            ),
+            (
+                pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                .list.max().cast(pl.Float32).alias('target_max_all_lag_2_4')
+            )
+        ).with_columns(
+            (
+                (pl.col('target_lag_2')/(1+pl.col('target_mean_all_lag')))
+                .cast(pl.Float32).alias('target_lag_2_vs_mean_all')
+            ),
+            (
+                (pl.col('target_lag_2')/(1+pl.col('target_min_all_lag')))
+                .cast(pl.Float32).alias('target_lag_2_vs_min_all')
+            ),
+            (
+                (pl.col('target_lag_2')/(1+pl.col('target_max_all_lag')))
+                .cast(pl.Float32).alias('target_lag_2_vs_max_all')
+            )
+        )
+        
         self.target_data = target_feature.filter(
             (
                 pl.any_horizontal(
                     (
                         pl.col(col).is_null() 
-                        for col in col_to_check_for_useless_join
+                        for col in target_lag_for_stats
                     )
                 ).not_()
             )
