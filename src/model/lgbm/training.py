@@ -105,7 +105,7 @@ class LgbmTrainer(LgbmInit):
                 os.path.join(
                     self.experiment_path,
                     f'lgb_{fold_}.txt'
-                )
+                ), importance_type='gain'
             )
 
             self.model_list.append(model)
@@ -143,7 +143,7 @@ class LgbmTrainer(LgbmInit):
             os.path.join(
                 self.experiment_path,
                 f'lgb_all.txt'
-            )
+            ), importance_type='gain'
         )
 
     def save_model(self)->None:
