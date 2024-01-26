@@ -22,18 +22,31 @@ class EnefitFeature(EnefitInit):
         self.client_data = self.client_data.with_columns(
             #clean date column
             (pl.col("date") + pl.duration(days=2)).cast(pl.Date),
-            # (
-            #     pl.col('eic_count').mean()
-            #     .over(['date', 'product_type', 'county', 'is_business'])
-            #     .cast(pl.UInt16)
-            #     .alias('eic_count_mean')
-            # ),
-            # (
-            #     pl.col('installed_capacity').mean()
-            #     .over(['date', 'product_type', 'county', 'is_business'])
-            #     .cast(pl.Float32)
-            #     .alias('installed_capacity_mean')
-            # )
+            (
+                pl.col('eic_count').mean()
+                .over(['date', 'product_type', 'county', 'is_business'])
+                .cast(pl.UInt16)
+                .alias('eic_count_mean_date')
+            ),
+            (
+                pl.col('installed_capacity').mean()
+                .over(['date', 'product_type', 'county', 'is_business'])
+                .cast(pl.Float32)
+                .alias('installed_capacity_mean_date')
+            ),
+            (
+                pl.col('eic_count').mean()
+                .over(['product_type', 'county', 'is_business'])
+                .cast(pl.UInt16)
+                .alias('eic_count_mean')
+            ),
+            (
+                pl.col('installed_capacity').mean()
+                .over(['product_type', 'county', 'is_business'])
+                .cast(pl.Float32)
+                .alias('installed_capacity_mean')
+            )
+
         )
         
     def create_gas_feature(self) -> None:
@@ -199,10 +212,8 @@ class EnefitFeature(EnefitInit):
         key_list: list[str] = ['county', 'is_business', 'product_type', 'is_consumption']
 
         #this dataset is used to calculate the lag
-        target_data = self.target_data
-
-        target_data = target_data.with_columns(
-            pl.col('datetime').dt.date().cast(pl.Date).alias('date')
+        target_data = self.target_data.with_columns(
+            pl.col('datetime').dt.date().alias('date').cast(pl.Date)
         )
         
         min_datetime = self._collect_item_utils(
@@ -228,35 +239,36 @@ class EnefitFeature(EnefitInit):
             target_data.select(key_list).unique()
             .join(
                 datetime_explosion, how='cross'
+            ).with_columns(
+                pl.col('datetime').dt.date().alias('date').cast(pl.Date)
+            )
+        )
+        # #add lag with aggregation on date
+        aggregation_by_date = (
+            target_data.select(
+                key_list + ['date', 'target']
+            ).group_by(key_list + ['date'])
+            .agg(
+                pl.col('target').mean().cast(pl.Float32)
             )
         )
         
-        # #add lag with aggregation on date
-        # aggregation_by_date = (
-        #     self.target_data.select(
-        #         key_list + ['date', 'target']
-        #     ).group_by(key_list + ['date'])
-        #     .agg(
-        #         pl.col('target').mean().cast(pl.Float32)
-        #     )
-        # )
         
+        aggregation_by_dict: Dict[str, Union[pl.LazyFrame, pl.DataFrame]] = {}
+        join_by_dict: Dict[str, list] = {}   
         
-        # aggregation_by_dict: Dict[str, Union[pl.LazyFrame, pl.DataFrame]] = {}
-        # join_by_dict: Dict[str, list] = {}   
-        
-        # for col in key_list:
-        #     other_key_list = [x for x in key_list if x != col]
-        #     aggregation_by_dict[col] = (
-        #         self.target_data.select(
-        #             other_key_list + ['datetime', 'target']
-        #         ).group_by(other_key_list + ['datetime'])
-        #         .agg(
-        #             pl.col('target').mean().cast(pl.Float32)
-        #         )
-        #     )
-        #     join_by_dict[col] = other_key_list
-
+        for col in key_list:
+            other_key_list = [x for x in key_list if x != col]
+            aggregation_by_dict[col] = (
+                target_data.select(
+                    other_key_list + ['datetime', 'target']
+                ).group_by(other_key_list + ['datetime'])
+                .agg(
+                    pl.col('target').mean().cast(pl.Float32)
+                )
+            )
+            join_by_dict[col] = other_key_list
+            
         #add all lag information
         for day_lag in range(2, self.target_n_lags+1):
             #add normal value
@@ -272,20 +284,21 @@ class EnefitFeature(EnefitInit):
                 on = key_list + ['datetime'], how='left'
             )
 
-            # target_feature = target_feature.join(
-            #     aggregation_by_date.with_columns(
-            #         pl.col("date") + pl.duration(days=day_lag)
-            #     ).rename({"target": f"avg_day_target_lag_{day_lag}"}),
-            #     on = key_list + ['date'], how='left'
-            # )
+            target_feature = target_feature.join(
+                aggregation_by_date.with_columns(
+                    pl.col("date") + pl.duration(days=day_lag)
+                ).rename({"target": f"avg_day_target_lag_{day_lag}"}),
+                on = key_list + ['date'], how='left'
+            )
             
-            # for col in key_list:
-            #     target_feature = target_feature.join(
-            #         aggregation_by_dict[col].with_columns(
-            #             pl.col("datetime") + pl.duration(days=day_lag)
-            #         ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
-            #         on = join_by_dict[col] + ['datetime'], how='left'
-            #     )
+            for col in key_list:
+                target_feature = target_feature.join(
+                    aggregation_by_dict[col].with_columns(
+                        pl.col("datetime") + pl.duration(days=day_lag)
+                    ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
+                    on = join_by_dict[col] + ['datetime'], how='left'
+                )
+
         col_to_check_for_useless_join = [
             col 
             for col in target_feature.columns 
@@ -357,15 +370,15 @@ class EnefitFeature(EnefitInit):
             holidays.country_holidays('EE', years=range(min_year-1, max_year+1)).keys()
         )
 
-        #add holiday as a dummy 0, 1 variable
-        # self.main_data = self.main_data.with_columns(
-        #     pl.when(
-        #         pl.col('date')
-        #         .is_in(estonian_holidays)
-        #     ).then(pl.lit(1))
-        #     .otherwise(pl.lit(0))
-        #     .cast(pl.UInt8).alias('holiday')
-        # )
+        # add holiday as a dummy 0, 1 variable
+        self.main_data = self.main_data.with_columns(
+            pl.when(
+                pl.col('date')
+                .is_in(estonian_holidays)
+            ).then(pl.lit(1))
+            .otherwise(pl.lit(0))
+            .cast(pl.UInt8).alias('holiday')
+        )
         
     def merge_all(self) -> None:            
         n_rows_begin = self._collect_item_utils(
@@ -380,29 +393,29 @@ class EnefitFeature(EnefitInit):
         )
 
         #merge with electricity
-        # self.data = self.data.join(
-        #     self.electricity_data, how='left',
-        #     on=['datetime'],
-        # )
+        self.data = self.data.join(
+            self.electricity_data, how='left',
+            on=['datetime'],
+        )
         
         #merge with gas
-        # self.data = self.data.join(
-        #     self.gas_data, how='left',
-        #     on=['date']
-        # )
+        self.data = self.data.join(
+            self.gas_data, how='left',
+            on=['date']
+        )
         
         #merge with weather
-        # self.data = self.data.join(
-        #     self.forecast_weather_data, how='left',
-        #     left_on = ['date', 'county'],
-        #     right_on=  ['date', 'county']
-        # )
+        self.data = self.data.join(
+            self.forecast_weather_data, how='left',
+            left_on = ['date', 'county'],
+            right_on=  ['date', 'county']
+        )
 
         #merge with historical
-        # self.data = self.data.join(
-        #     self.historical_weather_data, how='left',
-        #     on = ['date', 'county'],
-        # )
+        self.data = self.data.join(
+            self.historical_weather_data, how='left',
+            on = ['date', 'county'],
+        )
         self.data = self.data.join(
             self.target_data, how='left',
             on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
