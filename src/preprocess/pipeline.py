@@ -43,10 +43,12 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
     def preprocess_inference(self) -> None:
         self.create_feature()
         self.merge_all()
-        
+        self.add_additional_feature()
+
     def preprocess_train(self) -> None:
         self.create_feature()
         self.merge_all()
+        self.add_additional_feature()
         
         print('Collecting....')
         self.data = self.data.collect()
