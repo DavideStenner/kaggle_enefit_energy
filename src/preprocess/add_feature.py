@@ -123,7 +123,7 @@ class EnefitFeature(EnefitInit):
         #add county
         self.forecast_weather_data = self.forecast_weather_data.join(
             self.location_data, on=['latitude', 'longitude']
-        )
+        ).filter(pl.col('county').is_not_null())
         
         self.forecast_weather_data = self.forecast_weather_data.filter(pl.col("county").is_not_null())
         
@@ -183,7 +183,7 @@ class EnefitFeature(EnefitInit):
         #add county
         self.historical_weather_data = self.historical_weather_data.join(
             self.location_data, on=['latitude', 'longitude']
-        )
+        ).filter(pl.col('county').is_not_null())
     
         self.historical_weather_data = self.historical_weather_data.filter(pl.col("county").is_not_null())
         

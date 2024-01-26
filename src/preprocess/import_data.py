@@ -163,7 +163,7 @@ class EnefitImport(EnefitInit):
         
         self.location_data: pl.LazyFrame = pl.scan_csv(
             os.path.join(
-                self.config_dict['PATH_MAPPING_DATA'], 'location_mapping.csv'
+                self.config_dict['PATH_MAPPING_DATA'], 'weather_station_to_county_mapping.csv'
             )
         )
         
