@@ -2,6 +2,7 @@ import numpy as np
 import polars as pl
 import holidays
 
+from itertools import product
 from datetime import timedelta
 from typing import Dict, Union
 from src.preprocess.initialization import EnefitInit
@@ -96,10 +97,12 @@ class EnefitFeature(EnefitInit):
         self.electricity_data = self.electricity_data.drop('forecast_date')
             
     def create_forecast_weather_feature(self) -> None:
+        min_hour, max_hour = 22, 45
+        
         #filter hours ahead
         self.forecast_weather_data = self.forecast_weather_data.filter(
-            (pl.col("hours_ahead") >= 22) & 
-            (pl.col("hours_ahead") <= 45)
+            (pl.col("hours_ahead") >= min_hour) & 
+            (pl.col("hours_ahead") <= max_hour)
         )
         #add date which is a key
         self.forecast_weather_data = self.forecast_weather_data.with_columns(
@@ -127,35 +130,33 @@ class EnefitFeature(EnefitInit):
         
         self.forecast_weather_data = self.forecast_weather_data.filter(pl.col("county").is_not_null())
         
+        #PIVOT
         original_col_dict = {
             col: self.forecast_weather_data.select(col).dtypes[0]
             for col in training_variable
         }
-        #aggregate over county
+        combination_pivot = list(product(training_variable, list(range(min_hour, max_hour+1))))
+
         self.forecast_weather_data = (
-            self.forecast_weather_data.group_by(index_variable + ['hours_ahead'])
+            self.forecast_weather_data.collect()
+            .group_by(pl.col(index_variable))
             .agg(
-                [
-                    pl.col(col).mean().cast(original_col_dict[col]) 
-                    for col in training_variable
+                *[
+                    (
+                        (
+                            pl.col(train_col)
+                            .filter(pl.col('hours_ahead') == hours)
+                        ).mean()
+                        .alias(f'{train_col}_hours_ahead_{hours}')
+                        .cast(original_col_dict[train_col]) 
+                    )
+                    for train_col, hours in combination_pivot
                 ]
             )
         )
         
-        
-        #pivot everything to get future weather data -> collect not working for pivot 
-        if self.inference:
-            self.forecast_weather_data = self.forecast_weather_data.pivot(
-                values=training_variable, 
-                index=index_variable, columns='hours_ahead'
-            )
-        else:
-            self.forecast_weather_data = self.forecast_weather_data.collect().pivot(
-                values=training_variable, 
-                index=index_variable, columns='hours_ahead'
-            ).lazy()
-        
     def create_historical_weather_feature(self) -> None:
+        min_hour, max_hour = 0, 23
         #add date which is a key
         self.historical_weather_data = self.historical_weather_data.with_columns(
             (
@@ -200,32 +201,29 @@ class EnefitFeature(EnefitInit):
             )
         )
         
+        #PIVOT
         original_col_dict = {
             col: self.historical_weather_data.select(col).dtypes[0]
             for col in training_variable
         }
-        #aggregate over county
+        combination_pivot = list(product(training_variable, list(range(min_hour, max_hour+1))))
         self.historical_weather_data = (
-            self.historical_weather_data.group_by(index_variable + ['hours_ago'])
+            self.historical_weather_data
+            .group_by(pl.col(index_variable))
             .agg(
-                [
-                    pl.col(col).mean().cast(original_col_dict[col]) 
-                    for col in training_variable
+                *[
+                    (
+                        (
+                        pl.col(train_col)
+                        .filter(pl.col('hours_ago') == hours)
+                        ).mean()
+                        .alias(f'{train_col}_hours_ago_{hours}')
+                        .cast(original_col_dict[train_col])
+                    )
+                    for train_col, hours in combination_pivot
                 ]
             )
         )
-        
-        #pivot everything to get future weather data -> collect not working for pivot 
-        if self.inference:
-            self.historical_weather_data = self.historical_weather_data.pivot(
-                values=training_variable, 
-                index=index_variable, columns='hours_ago'
-            )
-        else:
-            self.historical_weather_data = self.historical_weather_data.collect().pivot(
-                values=training_variable, 
-                index=index_variable, columns='hours_ago'
-            ).lazy()
 
     def create_target_feature(self) -> None:
         key_list: list[str] = ['county', 'is_business', 'product_type', 'is_consumption']
