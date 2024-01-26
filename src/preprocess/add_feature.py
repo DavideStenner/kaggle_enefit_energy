@@ -440,6 +440,45 @@ class EnefitFeature(EnefitInit):
             .cast(pl.UInt8).alias('holiday')
         )
         
+    def add_additional_feature(self) -> None:
+        n_rows_begin = self._collect_item_utils(
+            self.data.select(pl.count())
+        )
+        
+        #production target ~ installed_capacity * surface_solar_radiation_downwards / (temperature + 273.15)
+        #https://www.kaggle.com/competitions/predict-energy-behavior-of-prosumers/discussion/468654
+        production_capacity_temperature_operator = [
+                (
+                    (
+                        pl.col('installed_capacity') * 
+                        pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
+                    ) /
+                    (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
+                ).alias(f'production_capacity_temperature_{hour}')
+                for hour in range(22, 46)
+        ]
+        #same but on installed_capacity log1p
+        production_capacitylog1p_temperature_operator = [
+                (
+                    (
+                        pl.col('installed_capacity_log1p') * 
+                        pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
+                    ) /
+                    (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
+                ).alias(f'production_capacity_log1p_temperature_{hour}')
+                for hour in range(22, 46)
+        ]
+        self.data = self.data.with_columns(
+            production_capacity_temperature_operator +
+            production_capacitylog1p_temperature_operator
+        )
+        
+        n_rows_end = self._collect_item_utils(
+            self.data.select(pl.count())
+        )
+
+        assert n_rows_begin == n_rows_end
+    
     def merge_all(self) -> None:            
         n_rows_begin = self._collect_item_utils(
             self.main_data.select(pl.count())
