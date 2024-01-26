@@ -22,6 +22,7 @@ class EnefitFeature(EnefitInit):
         self.client_data = self.client_data.with_columns(
             #clean date column
             (pl.col("date") + pl.duration(days=2)).cast(pl.Date),
+            #eic count
             (
                 pl.col('eic_count').mean()
                 .over(['date', 'product_type', 'county', 'is_business'])
@@ -29,24 +30,42 @@ class EnefitFeature(EnefitInit):
                 .alias('eic_count_mean_date')
             ),
             (
+                pl.col('eic_count').mean()
+                .over(['product_type', 'county', 'is_business'])
+                .cast(pl.UInt16)
+                .alias('eic_count_mean')
+            ),
+            #installed capacity
+            (
                 pl.col('installed_capacity').mean()
                 .over(['date', 'product_type', 'county', 'is_business'])
                 .cast(pl.Float32)
                 .alias('installed_capacity_mean_date')
             ),
             (
-                pl.col('eic_count').mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.UInt16)
-                .alias('eic_count_mean')
-            ),
-            (
                 pl.col('installed_capacity').mean()
                 .over(['product_type', 'county', 'is_business'])
                 .cast(pl.Float32)
                 .alias('installed_capacity_mean')
+            ),
+            #log 1p installed capacity
+            (
+                pl.col('installed_capacity').log1p()
+                .cast(pl.Float32)
+                .alias('installed_capacity_log1p')
+            ),
+            (
+                pl.col('installed_capacity').log1p().mean()
+                .over(['date', 'product_type', 'county', 'is_business'])
+                .cast(pl.Float32)
+                .alias('installed_capacity_log1p_mean_date')
+            ),
+            (
+                pl.col('installed_capacity').log1p().mean()
+                .over(['product_type', 'county', 'is_business'])
+                .cast(pl.Float32)
+                .alias('installed_capacity_log1p_mean')
             )
-
         )
         
     def create_gas_feature(self) -> None:
