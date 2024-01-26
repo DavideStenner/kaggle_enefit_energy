@@ -199,21 +199,35 @@ class EnefitFeature(EnefitInit):
         key_list: list[str] = ['county', 'is_business', 'product_type', 'is_consumption']
 
         #this dataset is used to calculate the lag
-        target_data = self.target_data.with_columns(
+        target_data = self.target_data
+
+        target_data = target_data.with_columns(
             pl.col('datetime').dt.date().cast(pl.Date).alias('date')
+        )
+        
+        min_datetime = self._collect_item_utils(
+            target_data.select('datetime').min()
+        )
+        max_datetime = self._collect_item_utils(
+            target_data.select('datetime').max()
         )
         
         #create join target df -> create more date so i can get all usable lag
         #fix to main bugc
+        datetime_explosion = pl.datetime_range(
+            min_datetime - timedelta(days=self.target_n_lags+1),
+            max_datetime + timedelta(days=self.target_n_lags+1),
+            timedelta(hours=1), eager=True
+        ).to_frame('datetime')
+        
+        if not self.inference:
+            datetime_explosion = datetime_explosion.lazy()
+            
         #this dataset is used to join to main_data
         target_feature = (
             target_data.select(key_list).unique()
             .join(
-                pl.datetime_range(
-                    target_data['datetime'].min() - timedelta(days=self.target_n_lags+1),
-                    target_data['datetime'].max() + timedelta(days=self.target_n_lags+1),
-                    timedelta(hours=1), eager=True
-                ).to_frame('datetime'), how='cross'
+                datetime_explosion, how='cross'
             )
         )
         
@@ -277,10 +291,17 @@ class EnefitFeature(EnefitInit):
             for col in target_feature.columns 
             if col not in key_list + ['datetime']
         ]
-        self.target_data = target_feature.drop(
+        self.target_data = target_feature.filter(
+            (
+                pl.any_horizontal(
+                    (
+                        pl.col(col).is_null() 
+                        for col in col_to_check_for_useless_join
+                    )
+                ).not_()
+            )
+        ).drop(
             ['target', 'date']
-        ).filter(
-            ~pl.any_horizontal(pl.all(col_to_check_for_useless_join).is_null())
         )
 
     def create_train_feature(self) -> None:
