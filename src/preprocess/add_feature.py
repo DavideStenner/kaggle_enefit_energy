@@ -215,8 +215,8 @@ class EnefitFeature(EnefitInit):
         #create join target df -> create more date so i can get all usable lag
         #fix to main bugc
         datetime_explosion = pl.datetime_range(
-            min_datetime - timedelta(days=self.target_n_lags+1),
-            max_datetime + timedelta(days=self.target_n_lags+1),
+            min_datetime - timedelta(days=self.target_n_lags+10),
+            max_datetime + timedelta(days=self.target_n_lags+10),
             timedelta(hours=1), eager=True
         ).to_frame('datetime')
         
@@ -378,7 +378,7 @@ class EnefitFeature(EnefitInit):
             self.client_data, how='left', 
             on=['county', 'is_business', 'product_type', 'date']
         )
-                
+
         #merge with electricity
         # self.data = self.data.join(
         #     self.electricity_data, how='left',
