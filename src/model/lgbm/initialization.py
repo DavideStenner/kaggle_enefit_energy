@@ -65,8 +65,8 @@ class LgbmInit():
     def load_model(self) -> None: 
         self.load_used_feature()
         self.load_best_result()
-        self.load_model_list()
         self.load_params()
+        self.load_model_list()
         self.load_model_all_data()
         
     def save_progress_list(self) -> None:
@@ -143,6 +143,7 @@ class LgbmInit():
 
     def load_model_all_data(self) -> None:
         self.model_all_data = lgb.Booster(
+            params=self.params_lgb,
             model_file=os.path.join(
                 self.experiment_path,
                 f'lgb_all.txt'
@@ -152,6 +153,7 @@ class LgbmInit():
         
         self.model_list = [
             lgb.Booster(
+                params=self.params_lgb,
                 model_file=os.path.join(
                     self.experiment_path,
                     f'lgb_{fold_}.txt'
