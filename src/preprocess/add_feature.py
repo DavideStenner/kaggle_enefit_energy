@@ -201,7 +201,7 @@ class EnefitFeature(EnefitInit):
                 *pivot_operator_list
             )
         )
-        
+
     def create_historical_weather_feature(self) -> None:
         min_hour, max_hour = 0, 23
         #add date which is a key
@@ -253,7 +253,7 @@ class EnefitFeature(EnefitInit):
             col: self.historical_weather_data.select(col).dtypes[0]
             for col in training_variable
         }
-        combination_pivot = list(product(training_variable, list(range(min_hour, max_hour+1))))
+
         self.historical_weather_data = (
             self.historical_weather_data
             .group_by(pl.col(index_variable))
@@ -262,12 +262,11 @@ class EnefitFeature(EnefitInit):
                     (
                         (
                         pl.col(train_col)
-                        .filter(pl.col('hours_ago') == hours)
                         ).mean()
-                        .alias(f'{train_col}_hours_ago_{hours}')
+                        .alias(f'{train_col}_hours_ago_mean')
                         .cast(original_col_dict[train_col])
                     )
-                    for train_col, hours in combination_pivot
+                    for train_col in training_variable
                 ]
             )
         )
