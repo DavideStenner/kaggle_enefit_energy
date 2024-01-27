@@ -203,7 +203,7 @@ class EnefitFeature(EnefitInit):
         )
 
     def create_historical_weather_feature(self) -> None:
-        min_hour, max_hour = 0, 23
+        
         #add date which is a key
         self.historical_weather_data = self.historical_weather_data.with_columns(
             (
