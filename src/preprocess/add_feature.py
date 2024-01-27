@@ -454,25 +454,25 @@ class EnefitFeature(EnefitInit):
         #production target ~ installed_capacity * surface_solar_radiation_downwards / (temperature + 273.15)
         #https://www.kaggle.com/competitions/predict-energy-behavior-of-prosumers/discussion/468654
         production_capacity_temperature_operator = [
+            (
                 (
-                    (
-                        pl.col('installed_capacity') * 
-                        pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
-                    ) /
-                    (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
-                ).alias(f'production_capacity_temperature_{hour}')
-                for hour in range(22, 46)
+                    pl.col('installed_capacity') * 
+                    pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
+                ) /
+                (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
+            ).alias(f'production_capacity_temperature_{hour}')
+            for hour in range(22, 46)
         ]
         #same but on installed_capacity log1p
         production_capacitylog1p_temperature_operator = [
+            (
                 (
-                    (
-                        pl.col('installed_capacity_log1p') * 
-                        pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
-                    ) /
-                    (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
-                ).alias(f'production_capacity_log1p_temperature_{hour}')
-                for hour in range(22, 46)
+                    pl.col('installed_capacity_log1p') * 
+                    pl.col(f'surface_solar_radiation_downwards_hours_ahead_{hour}')
+                ) /
+                (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
+            ).alias(f'production_capacity_log1p_temperature_{hour}')
+            for hour in range(22, 46)
         ]
         self.data = self.data.with_columns(
             production_capacity_temperature_operator +
