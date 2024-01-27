@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from typing import Union
 from src.model.lgbm.initialization import LgbmInit
+from src.utils.other import find_contained_string
 
 class LgbmExplainer(LgbmInit):       
     def plot_train_curve(self, progress_df: pd.DataFrame, variable_to_plot: Union[str, list], name_plot: str, best_epoch_lgb:int) -> None:
@@ -123,7 +124,25 @@ class LgbmExplainer(LgbmInit):
         )
         plt.close(fig)
         
+        #feature importance excel
         feature_importances.to_excel(
             os.path.join(self.experiment_path, 'feature_importances.xlsx'),
             index=False
+        )
+
+        feature_importances['base_feature'] = feature_importances['feature'].map(
+            {
+                col: find_contained_string(col, self.base_feature)
+                for col in feature_importances['feature']
+            }    
+        )
+        feature_importances['average_rank'] = feature_importances['average'].rank()
+        
+        feature_importances = feature_importances[['base_feature', 'average_rank', 'average']].groupby(
+            'base_feature'
+        ).mean()
+        
+        #feature importance excel
+        feature_importances.to_excel(
+            os.path.join(self.experiment_path, 'base_feature_importance.xlsx'),
         )
