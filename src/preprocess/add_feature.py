@@ -294,7 +294,8 @@ class EnefitFeature(EnefitInit):
                     target_data
                     .select(key_list + ['datetime', 'target'])
                     .with_columns(
-                        pl.col("datetime") + pl.duration(days=day_lag)
+                        (pl.col("datetime") + pl.duration(days=day_lag)),
+                        (pl.col('target').log1p().cast(pl.Float32).alias(f'target_log1p_lag_{day_lag}'))
                     )
                     .rename({"target": f"target_lag_{day_lag}"})
                 ),
@@ -317,6 +318,9 @@ class EnefitFeature(EnefitInit):
                 )
 
         target_lag_for_stats = [f"target_lag_{day_lag}" for day_lag in range(2, self.target_n_lags+1)]
+        target_lag_diff_col = [f'target_lag_{day_lag}_diff' for day_lag in range(2, self.target_n_lags)]
+        target_log1p_lag_diff_col = [f'target_log1p_lag_{day_lag}_diff' for day_lag in range(2, self.target_n_lags)]
+        
         target_feature = target_feature.filter(
             (
                 pl.any_horizontal(
@@ -331,8 +335,75 @@ class EnefitFeature(EnefitInit):
         # #add mean lag over target
         target_feature = (
             target_feature
+            #target lag difference
+            .with_columns(
+                [
+                    (
+                        (pl.col(f'target_lag_{day_lag}') - pl.col(f'target_lag_{day_lag+1}'))
+                        .cast(pl.Float32).alias(f'target_lag_{day_lag}_diff')
+                    )
+                    for day_lag in range(2, self.target_n_lags)
+                ] +
+                [
+                    (
+                        (pl.col(f'target_log1p_lag_{day_lag}') - pl.col(f'target_log1p_lag_{day_lag+1}'))
+                        .cast(pl.Float32).alias(f'target_log1p_lag_{day_lag}_diff')
+                    )
+                    for day_lag in range(2, self.target_n_lags)                    
+                ]
+            )
             #all aggregation
             .with_columns(
+                # #mean log1ptarget shift
+                (
+                    pl.concat_list(pl.col(target_log1p_lag_diff_col))
+                    .list.mean()
+                    .cast(pl.Float32).alias('target_log1p_mean_shift_all_lag')
+                ),
+                (
+                    pl.concat_list(pl.col(target_log1p_lag_diff_col[:4]))
+                    .list.mean()
+                    .cast(pl.Float32).alias('target_log1p_mean_shift_all_lag_2_4')
+                ),
+
+                # #mean target shift
+                (
+                    pl.concat_list(pl.col(target_lag_diff_col))
+                    .list.mean()
+                    .cast(pl.Float32).alias('target_mean_shift_all_lag')
+                ),
+                (
+                    pl.concat_list(pl.col(target_lag_diff_col[:4]))
+                    .list.mean()
+                    .cast(pl.Float32).alias('target_mean_shift_all_lag_2_4')
+                ),
+                #target lag sum
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats))
+                    .list.sum().cast(pl.Float32).alias('target_sum_all_lag')
+                ),
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                    .list.sum().cast(pl.Float32).alias('target_sum_all_lag_2_4')
+                ),
+                #target argmax sum
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats))
+                    .list.arg_max().cast(pl.UInt8).alias('target_argmax_all_lag')
+                ),
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                    .list.arg_max().cast(pl.UInt8).alias('target_argmax_all_lag_2_4')
+                ),
+                #target argmin sum
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats))
+                    .list.arg_min().cast(pl.UInt8).alias('target_argmin_all_lag')
+                ),
+                (
+                    pl.concat_list(pl.col(target_lag_for_stats[:4]))
+                    .list.arg_min().cast(pl.UInt8).alias('target_argmin_all_lag_2_4')
+                ),
                 #target lag mean
                 (
                     pl.concat_list(pl.col(target_lag_for_stats))
@@ -368,12 +439,32 @@ class EnefitFeature(EnefitInit):
                     .cast(pl.Float32).alias('target_lag_2_vs_mean_all')
                 ),
                 (
+                    (pl.col('target_lag_2')/(1+pl.col('target_mean_all_lag_2_4')))
+                    .cast(pl.Float32).alias('target_lag_2_vs_mean_all_lag_2_4')
+                ),
+                (
                     (pl.col('target_lag_2')/(1+pl.col('target_min_all_lag')))
                     .cast(pl.Float32).alias('target_lag_2_vs_min_all')
                 ),
                 (
+                    (pl.col('target_lag_2')/(1+pl.col('target_min_all_lag_2_4')))
+                    .cast(pl.Float32).alias('target_lag_2_vs_min_all_lag_2_4')
+                ),
+                (
                     (pl.col('target_lag_2')/(1+pl.col('target_max_all_lag')))
                     .cast(pl.Float32).alias('target_lag_2_vs_max_all')
+                ),
+                (
+                    (pl.col('target_lag_2')/(1+pl.col('target_max_all_lag_2_4')))
+                    .cast(pl.Float32).alias('target_lag_2_vs_max_all_lag_2_4')
+                ),
+                (
+                    (pl.col('target_lag_2')/(1+pl.col('target_sum_all_lag')))
+                    .cast(pl.Float32).alias('target_lag_2_vs_sum_all')
+                ),
+                (
+                    (pl.col('target_lag_2')/(1+pl.col('target_sum_all_lag_2_4')))
+                    .cast(pl.Float32).alias('target_lag_2_vs_sum_all_2_4')
                 )
             )
         )
@@ -473,6 +564,25 @@ class EnefitFeature(EnefitInit):
                 (pl.col(f'temperature_hours_ahead_{hour}') + pl.lit(273.15, dtype=pl.Float32))
             ).alias(f'production_capacity_log1p_temperature_{hour}')
             for hour in range(22, 46)
+        ]
+        target_vs_installed = [
+            (
+                (pl.col(f'target_lag_{day_lag}')/(1+pl.col('installed_capacity')))
+                .alias(f'target_lag_{day_lag}_vs_installed')
+                .cast(pl.Float32)
+            )
+            for day_lag in range(2, self.target_n_lags+1)
+        ]
+        target_vs_eic = [
+            (
+                (pl.col(f'target_lag_{day_lag}')/(1+pl.col('eic_count')))
+                .alias(f'target_lag_{day_lag}_vs_eic')
+                .cast(pl.Float32)
+            )
+            for day_lag in range(2, self.target_n_lags+1)
+        ]
+        other = [
+            (pl.col('installed_capacity')/(pl.lit(1) +pl.col('eic_count'))).alias('installed_vs_eic').cast(pl.Float32)
         ]
         self.data = self.data.with_columns(
             production_capacity_temperature_operator +
