@@ -138,7 +138,7 @@ class EnefitFeature(EnefitInit):
         combination_pivot = list(product(training_variable, list(range(min_hour, max_hour+1))))
 
         self.forecast_weather_data = (
-            self.forecast_weather_data.collect()
+            self.forecast_weather_data
             .group_by(pl.col(index_variable))
             .agg(
                 *[
