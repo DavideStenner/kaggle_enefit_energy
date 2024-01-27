@@ -14,3 +14,4 @@ ipywidgets==8.1.1
 xgboost==2.0.2
 nbformat==5.9.2
 holidays==0.40
+openpyxl
