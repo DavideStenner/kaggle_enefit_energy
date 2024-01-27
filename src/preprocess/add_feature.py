@@ -446,9 +446,10 @@ class EnefitFeature(EnefitInit):
         )
         
     def add_additional_feature(self) -> None:
-        n_rows_begin = self._collect_item_utils(
-            self.data.select(pl.count())
-        )
+        if not self.inference:
+            n_rows_begin = self._collect_item_utils(
+                self.data.select(pl.count())
+            )
         
         #production target ~ installed_capacity * surface_solar_radiation_downwards / (temperature + 273.15)
         #https://www.kaggle.com/competitions/predict-energy-behavior-of-prosumers/discussion/468654
@@ -478,16 +479,19 @@ class EnefitFeature(EnefitInit):
             production_capacitylog1p_temperature_operator
         )
         
-        n_rows_end = self._collect_item_utils(
-            self.data.select(pl.count())
-        )
+        if not self.inference:
+            n_rows_end = self._collect_item_utils(
+                self.data.select(pl.count())
+            )
 
-        assert n_rows_begin == n_rows_end
+            assert n_rows_begin == n_rows_end
     
-    def merge_all(self) -> None:            
-        n_rows_begin = self._collect_item_utils(
-            self.main_data.select(pl.count())
-        )
+    def merge_all(self) -> None:      
+        if not self.inference:
+      
+            n_rows_begin = self._collect_item_utils(
+                self.main_data.select(pl.count())
+            )
 
         #Merge all datasets
         #merge with client
@@ -525,8 +529,9 @@ class EnefitFeature(EnefitInit):
             on = ['datetime', 'county', 'is_business', 'product_type', 'is_consumption'],
         )
 
-        n_rows_end = self._collect_item_utils(
-            self.data.select(pl.count())
-        )
+        if not self.inference:
+            n_rows_end = self._collect_item_utils(
+                self.data.select(pl.count())
+            )
 
-        assert n_rows_begin == n_rows_end
+            assert n_rows_begin == n_rows_end
