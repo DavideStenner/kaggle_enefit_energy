@@ -109,12 +109,21 @@ class LgbmExplainer(LgbmInit):
         feature_importances['average'] = feature_importances[
             [f'fold_{fold_}' for fold_ in range(self.n_fold)]
         ].mean(axis=1)
-
+        feature_importances = (
+            feature_importances[['feature', 'average']]
+            .sort_values(by='average', ascending=False)
+        )
+        
         fig = plt.figure(figsize=(12,8))
-        sns.barplot(data=feature_importances.sort_values(by='average', ascending=False).head(50), x='average', y='feature')
+        sns.barplot(data=feature_importances.head(50), x='average', y='feature')
         plt.title(f"50 TOP feature importance over {self.n_fold} average")
 
         fig.savefig(
             os.path.join(self.experiment_path, 'importance_plot.png')
         )
         plt.close(fig)
+        
+        feature_importances.to_excel(
+            os.path.join(self.experiment_path, 'feature_importances.xlsx'),
+            index=False
+        )
