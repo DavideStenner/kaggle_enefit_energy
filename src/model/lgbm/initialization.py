@@ -57,7 +57,43 @@ class LgbmInit():
         self.best_result: dict[str, Union[int, float]] = None
         
         self.feature_list: list[str] = []
-    
+        self.base_feature: list[str] = [
+            'product_type',
+            'county',
+            'eic_count',
+            'installed_capacity',
+            'is_business',
+            'target',
+            'lowest_price_per_mwh',
+            'highest_price_per_mwh',
+            'euros_per_mwh',
+            'temperature_hours_ahead_',
+            'dewpoint_hours_ahead_',
+            'cloudcover_high_hours_ahead_',
+            'cloudcover_low_hours_ahead_',
+            'cloudcover_mid_hours_ahead_',
+            'cloudcover_total_hours_ahead_',
+            '10_metre_u_wind_component_hours_ahead_',
+            '10_metre_v_wind_component_hours_ahead_',
+            'direct_solar_radiation_hours_ahead_',
+            'surface_solar_radiation_downwards_hours_ahead_',
+            'snowfall_hours_ahead_',
+            'total_precipitation_hours_ahead_',
+            'temperature_hours_ago_',
+            'dewpoint_hours_ago_',
+            'rain_hours_ago_',
+            'snowfall_hours_ago_',
+            'surface_pressure_hours_ago_',
+            'cloudcover_total_hours_ago_',
+            'cloudcover_low_hours_ago_',
+            'cloudcover_mid_hours_ago_',
+            'cloudcover_high_hours_ago_',
+            'windspeed_10m_hours_ago_',
+            'winddirection_10m_hours_ago_',
+            'shortwave_radiation_hours_ago_',
+            'direct_solar_radiation_hours_ago_',
+            'diffuse_radiation_hours_ago_',
+        ]
     def create_experiment_structure(self) -> None:
         if not os.path.isdir(self.experiment_path):
             os.makedirs(self.experiment_path)
