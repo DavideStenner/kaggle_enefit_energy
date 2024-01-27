@@ -135,23 +135,70 @@ class EnefitFeature(EnefitInit):
             col: self.forecast_weather_data.select(col).dtypes[0]
             for col in training_variable
         }
-        combination_pivot = list(product(training_variable, list(range(min_hour, max_hour+1))))
-
+        combination_pivot_mean = list(product(training_variable, list(range(min_hour, max_hour+1))))
+        combination_pivot_other = combination_pivot_mean
+        # list(
+        #     product(
+        #         [
+        #             'total_precipitation', 'cloudcover_low', 
+        #             'direct_solar_radiation', 'temperature'
+        #         ], 
+        #         list(range(min_hour, max_hour+1)))
+        # )
+        
+        pivot_operator_mean = [
+            (
+                (
+                    pl.col(train_col)
+                    .filter(pl.col('hours_ahead') == hours)
+                ).mean()
+                .alias(f'{train_col}_hours_ahead_{hours}')
+                .cast(original_col_dict[train_col]) 
+            )
+            for train_col, hours in combination_pivot_mean
+        ]
+        pivot_operator_min = [
+            (
+                (
+                    pl.col(train_col)
+                    .filter(pl.col('hours_ahead') == hours)
+                ).min()
+                .alias(f'{train_col}_hours_ahead_{hours}_min')
+                .cast(original_col_dict[train_col]) 
+            )
+            for train_col, hours in combination_pivot_other
+        ]
+        pivot_operator_max = [
+            (
+                (
+                    pl.col(train_col)
+                    .filter(pl.col('hours_ahead') == hours)
+                ).max()
+                .alias(f'{train_col}_hours_ahead_{hours}_max')
+                .cast(original_col_dict[train_col]) 
+            )
+            for train_col, hours in combination_pivot_other
+        ]
+        pivot_operator_std = [
+            (
+                (
+                    pl.col(train_col)
+                    .filter(pl.col('hours_ahead') == hours)
+                ).std()
+                .alias(f'{train_col}_hours_ahead_{hours}_std')
+                .cast(original_col_dict[train_col]) 
+            )
+            for train_col, hours in combination_pivot_other
+        ]
+        pivot_operator_list = (
+            pivot_operator_mean + pivot_operator_min + 
+            pivot_operator_max + pivot_operator_std
+        )
         self.forecast_weather_data = (
             self.forecast_weather_data
             .group_by(pl.col(index_variable))
             .agg(
-                *[
-                    (
-                        (
-                            pl.col(train_col)
-                            .filter(pl.col('hours_ahead') == hours)
-                        ).mean()
-                        .alias(f'{train_col}_hours_ahead_{hours}')
-                        .cast(original_col_dict[train_col]) 
-                    )
-                    for train_col, hours in combination_pivot
-                ]
+                *pivot_operator_list
             )
         )
         
