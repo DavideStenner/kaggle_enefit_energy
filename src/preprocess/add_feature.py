@@ -586,7 +586,10 @@ class EnefitFeature(EnefitInit):
         ]
         self.data = self.data.with_columns(
             production_capacity_temperature_operator +
-            production_capacitylog1p_temperature_operator
+            production_capacitylog1p_temperature_operator +
+            target_vs_installed +
+            target_vs_eic +
+            other
         )
         
         if not self.inference:
