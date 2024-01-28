@@ -312,7 +312,11 @@ class EnefitFeature(EnefitInit):
                 key_list + ['date', 'target']
             ).group_by(key_list + ['date'])
             .agg(
-                pl.col('target').mean().cast(pl.Float32)
+                pl.col('target').mean().alias('avg_day_target').cast(pl.Float32),
+                pl.col('target').sum().alias('sum_day_target').cast(pl.Float32),
+                pl.col('target').min().alias('min_day_target').cast(pl.Float32),
+                pl.col('target').max().alias('max_day_target').cast(pl.Float32),
+                pl.col('target').std().alias('std_day_target').cast(pl.Float32),
             )
         )
         
@@ -327,7 +331,11 @@ class EnefitFeature(EnefitInit):
                     other_key_list + ['datetime', 'target']
                 ).group_by(other_key_list + ['datetime'])
                 .agg(
-                    pl.col('target').mean().cast(pl.Float32)
+                    pl.col('target').mean().alias(f'avg_{col}_target').cast(pl.Float32),
+                    pl.col('target').sum().alias(f'sum_{col}_target').cast(pl.Float32),
+                    pl.col('target').min().alias(f'min_{col}_target').cast(pl.Float32),
+                    pl.col('target').max().alias(f'max_{col}_target').cast(pl.Float32),
+                    pl.col('target').std().alias(f'std_{col}_target').cast(pl.Float32),
                 )
             )
             join_by_dict[col] = other_key_list
@@ -351,7 +359,15 @@ class EnefitFeature(EnefitInit):
             target_feature = target_feature.join(
                 aggregation_by_date.with_columns(
                     pl.col("date") + pl.duration(days=day_lag)
-                ).rename({"target": f"avg_day_target_lag_{day_lag}"}),
+                ).rename(
+                    {
+                        'avg_day_target': f'avg_day_target_lag_{day_lag}',
+                        'sum_day_target': f'sum_day_target_lag_{day_lag}',
+                        'min_day_target': f'min_day_target_lag_{day_lag}',
+                        'max_day_target': f'max_day_target_lag_{day_lag}',
+                        'std_day_target': f'std_day_target_lag_{day_lag}',            
+                    }
+                ),
                 on = key_list + ['date'], how='left'
             )
             
@@ -359,7 +375,15 @@ class EnefitFeature(EnefitInit):
                 target_feature = target_feature.join(
                     aggregation_by_dict[col].with_columns(
                         pl.col("datetime") + pl.duration(days=day_lag)
-                    ).rename({"target": f"avg_{col}_target_lag_{day_lag}"}),
+                    ).rename(
+                        {
+                            f'avg_{col}_target': f'avg_{col}_target_lag_{day_lag}',
+                            f'sum_{col}_target': f'sum_{col}_target_lag_{day_lag}',
+                            f'min_{col}_target': f'min_{col}_target_lag_{day_lag}',
+                            f'max_{col}_target': f'max_{col}_target_lag_{day_lag}',
+                            f'std_{col}_target': f'std_{col}_target_lag_{day_lag}s',            
+                        }
+                    ),
                     on = join_by_dict[col] + ['datetime'], how='left'
                 )
 
