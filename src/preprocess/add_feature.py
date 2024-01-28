@@ -137,14 +137,6 @@ class EnefitFeature(EnefitInit):
         }
         combination_pivot_mean = list(product(training_variable, list(range(min_hour, max_hour+1))))
         combination_pivot_other = combination_pivot_mean
-        # list(
-        #     product(
-        #         [
-        #             'total_precipitation', 'cloudcover_low', 
-        #             'direct_solar_radiation', 'temperature'
-        #         ], 
-        #         list(range(min_hour, max_hour+1)))
-        # )
         
         pivot_operator_mean = [
             (
@@ -407,6 +399,7 @@ class EnefitFeature(EnefitInit):
             target_feature
             #target lag difference
             .with_columns(
+                #diff
                 [
                     (
                         (pl.col(f'target_lag_{day_lag}') - pl.col(f'target_lag_{day_lag+1}'))
@@ -414,6 +407,7 @@ class EnefitFeature(EnefitInit):
                     )
                     for day_lag in range(2, self.target_n_lags)
                 ] +
+                #log diff
                 [
                     (
                         (pl.col(f'target_log1p_lag_{day_lag}') - pl.col(f'target_log1p_lag_{day_lag+1}'))
