@@ -349,8 +349,8 @@ class EnefitImport(EnefitInit):
         self.downcast_historical_weather_data()
         self.downcast_location()
         self.downcast_train()
-        self.filter_train()
 
         self.create_target_data()
+        self.filter_train()
         
         self.memorize_starting_dataset_schema()
