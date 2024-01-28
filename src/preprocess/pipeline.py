@@ -58,15 +58,18 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.create_fold()
         self.save_data()
     
-    def collect_all(self) -> None:
+    def collect_feature(self) -> None:
         self.location_data = self.location_data.collect()
         self.starting_client_data = self.starting_client_data.collect()
         self.starting_electricity_data = self.starting_electricity_data.collect()
         self.starting_forecast_weather_data = self.starting_forecast_weather_data.collect()
         self.starting_gas_data = self.starting_gas_data.collect()
         self.starting_historical_weather_data = self.starting_historical_weather_data.collect()
-        self.main_data = self.main_data.collect()
         self.starting_target_data = self.starting_target_data.collect()
+
+    def collect_all(self) -> None:
+        self.collect_feature()
+        self.main_data = self.main_data.collect()
         
     def begin_inference(self) -> None:
         #reset data
@@ -76,7 +79,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.import_all()
         
         #collect to enable append
-        self.collect_all()
+        self.collect_feature()
         
     def __call__(self) -> None:
         if self.inference:
