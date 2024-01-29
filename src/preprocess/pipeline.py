@@ -29,8 +29,7 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
             )
         )
     def create_feature(self) -> None:
-        _ = gc.collect()
-        self.copy_starting_dataset()
+        _ = gc.collect()        
         
         self.create_client_feature()
         self.create_electricity_feature()
@@ -41,11 +40,14 @@ class EnefitPipeline(EnefitImport, EnefitFeature, EnefitFoldCreator):
         self.create_target_feature()
         
     def preprocess_inference(self) -> None:
+        self.copy_starting_dataset()
+        self.filter_dataset_inference()
         self.create_feature()
         self.merge_all()
         self.add_additional_feature()
 
     def preprocess_train(self) -> None:
+        self.copy_starting_dataset()
         self.create_feature()
         self.merge_all()
         self.add_additional_feature()

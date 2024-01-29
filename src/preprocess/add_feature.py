@@ -8,7 +8,40 @@ from typing import Dict, Union
 from src.preprocess.initialization import EnefitInit
 
 class EnefitFeature(EnefitInit):
-    
+    def filter_dataset_inference(self) -> None:
+        #used during inference to speedup calculation
+        #keep only what is needed
+        assert self.inference
+        
+        min_data_date, max_data_date = (
+            self.main_data['datetime'].min() - timedelta(days=self.target_n_lags+31), 
+            self.main_data['datetime'].max() + timedelta(days=self.target_n_lags+31)
+        )
+        self.client_data = self.client_data.filter(
+            (pl.col('date') >= min_data_date)&
+            (pl.col('date') <= max_data_date)
+        )
+        self.gas_data = self.gas_data.filter(
+            (pl.col('forecast_date') >= min_data_date)&
+            (pl.col('forecast_date') <= max_data_date)
+        )
+        self.electricity_data = self.electricity_data.filter(
+            (pl.col('forecast_date') >= min_data_date)&
+            (pl.col('forecast_date') <= max_data_date)
+        )
+        self.forecast_weather_data = self.forecast_weather_data.filter(
+            (pl.col('origin_datetime') >= min_data_date)&
+            (pl.col('origin_datetime') <= max_data_date)
+        )
+        self.historical_weather_data = self.historical_weather_data.filter(
+            (pl.col('datetime') >= min_data_date)&
+            (pl.col('datetime') <= max_data_date)
+        )
+        self.target_data = self.target_data.filter(
+            (pl.col('datetime') >= min_data_date)&
+            (pl.col('datetime') <= max_data_date)
+        )
+
     def copy_starting_dataset(self) -> None:
         #keep starting dataset without modification -> used during inference to update it
         self.client_data = self.starting_client_data
