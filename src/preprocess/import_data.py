@@ -351,6 +351,5 @@ class EnefitImport(EnefitInit):
         self.downcast_train()
 
         self.create_target_data()
-        self.filter_train()
         
         self.memorize_starting_dataset_schema()
