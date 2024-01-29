@@ -63,24 +63,12 @@ class EnefitFeature(EnefitInit):
                 .cast(pl.UInt16)
                 .alias('eic_count_mean_date')
             ),
-            (
-                pl.col('eic_count').mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.UInt16)
-                .alias('eic_count_mean')
-            ),
             #installed capacity
             (
                 pl.col('installed_capacity').mean()
                 .over(['date', 'product_type', 'county', 'is_business'])
                 .cast(pl.Float32)
                 .alias('installed_capacity_mean_date')
-            ),
-            (
-                pl.col('installed_capacity').mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.Float32)
-                .alias('installed_capacity_mean')
             ),
             #log 1p installed capacity
             (
@@ -93,12 +81,6 @@ class EnefitFeature(EnefitInit):
                 .over(['date', 'product_type', 'county', 'is_business'])
                 .cast(pl.Float32)
                 .alias('installed_capacity_log1p_mean_date')
-            ),
-            (
-                pl.col('installed_capacity').log1p().mean()
-                .over(['product_type', 'county', 'is_business'])
-                .cast(pl.Float32)
-                .alias('installed_capacity_log1p_mean')
             )
         )
         
