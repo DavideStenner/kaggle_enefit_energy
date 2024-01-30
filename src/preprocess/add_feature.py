@@ -388,7 +388,7 @@ class EnefitFeature(EnefitInit):
                             f'sum_{col}_target': f'sum_{col}_target_lag_{day_lag}',
                             f'min_{col}_target': f'min_{col}_target_lag_{day_lag}',
                             f'max_{col}_target': f'max_{col}_target_lag_{day_lag}',
-                            f'std_{col}_target': f'std_{col}_target_lag_{day_lag}s',            
+                            f'std_{col}_target': f'std_{col}_target_lag_{day_lag}',            
                         }
                     ),
                     on = join_by_dict[col] + ['datetime'], how='left'
