@@ -14,7 +14,7 @@ class XgbInit():
             params_xgb: dict[str, Any],
             metric_eval: str,
             config_dict: dict[str, Any], inference_setup: str=None,
-            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False
+            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False, number_importance_feature: int = None
         ):
         if inference_setup is None:
             self.inference_setup = 'blend'
@@ -42,13 +42,14 @@ class XgbInit():
             'row_id', 'current_fold', 'year', 
         ]
         if use_importance_filter:    
+            if number_importance_feature is None:
+                raise ValueError
+            
             print('Importing best feature from lgb experiment')
-            self.importance_feature_list: list[str] = pd.read_excel(
-                os.path.join(
-                    self.experiment_path.replace('_xgb', '') + '_lgb', 
-                    'feature_importances.xlsx'
-                )
-            ).sort_values(by='average', ascending=False)['feature'].values.tolist()[:500]
+            with open('config/best_feature', "r") as file:
+                # Read all lines from the file into a list
+                self.importance_feature_list = [col.strip() for col in file.readlines()][:number_importance_feature]
+
         else:
             self.importance_feature_list: list[str] = None
                

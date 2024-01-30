@@ -11,12 +11,12 @@ class XgbmPipeline(XgbTrainer, XgbExplainer, XgbInference):
             params_xgb: dict[str, Any],
             metric_eval: str,
             config_dict: dict[str, Any], inference_setup: str=None,
-            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False
+            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False, number_importance_feature: int = None
         ):
         XgbInit.__init__(
             self, experiment_name=experiment_name, params_xgb=params_xgb,
             metric_eval=metric_eval, config_dict=config_dict, inference_setup=inference_setup,
-            log_evaluation=log_evaluation, fold_name=fold_name, use_importance_filter=use_importance_filter
+            log_evaluation=log_evaluation, fold_name=fold_name, use_importance_filter=use_importance_filter, number_importance_feature = number_importance_feature
         )
 
     def activate_inference(self) -> None:

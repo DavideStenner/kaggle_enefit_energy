@@ -11,12 +11,12 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
             params_lgb: dict[str, Any],
             metric_eval: str,
             config_dict: dict[str, Any], inference_setup: str=None,
-            log_evaluation:int =1, fold_name: str = 'fold_info'
+            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False, number_importance_feature: int = None
         ):
         LgbmInit.__init__(
             self, experiment_name=experiment_name, params_lgb=params_lgb,
             metric_eval=metric_eval, config_dict=config_dict, inference_setup=inference_setup,
-            log_evaluation=log_evaluation, fold_name=fold_name
+            log_evaluation=log_evaluation, fold_name=fold_name, use_importance_filter=use_importance_filter, number_importance_feature = number_importance_feature
         )
 
     def activate_inference(self) -> None:

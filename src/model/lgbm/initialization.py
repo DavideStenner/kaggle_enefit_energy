@@ -13,7 +13,7 @@ class LgbmInit():
             params_lgb: dict[str, Any],
             metric_eval: str,
             config_dict: dict[str, Any], inference_setup: str=None,
-            log_evaluation:int =1, fold_name: str = 'fold_info'
+            log_evaluation:int =1, fold_name: str = 'fold_info', use_importance_filter: bool = False, number_importance_feature: int = None
         ):
         if inference_setup is None:
             self.inference_setup = 'blend'
@@ -40,6 +40,18 @@ class LgbmInit():
             'data_block_id', 'prediction_unit_id',
             'row_id', 'current_fold', 'year'
         ]
+        if use_importance_filter:    
+            if number_importance_feature is None:
+                raise ValueError
+            
+            print('Importing best feature from lgb experiment')
+            with open('config/best_feature', "r") as file:
+                # Read all lines from the file into a list
+                self.importance_feature_list = [col.strip() for col in file.readlines()][:number_importance_feature]
+
+        else:
+            self.importance_feature_list: list[str] = None
+            
         self.categorical_col_list: list[str] = [
             "county",
             "is_business",

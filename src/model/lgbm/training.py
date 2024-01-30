@@ -13,10 +13,15 @@ class LgbmTrainer(LgbmInit):
                 'data.parquet'
             )
         )
-        self.feature_list = [
-            col for col in data.columns
-            if col not in self.useless_col_list + [self.fold_name, self.target_col_name]
-        ]
+        if self.importance_feature_list is None:
+            print('Using all feature')
+            self.feature_list = [
+                col for col in data.columns
+                if col not in self.useless_col_list + [self.fold_name, self.target_col_name]
+            ]
+        else:
+            print(f'Using top {len(self.importance_feature_list)} feature')
+            self.feature_list = self.importance_feature_list
         
         #save feature list locally for later
         self.save_used_feature()
