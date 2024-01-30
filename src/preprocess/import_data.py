@@ -120,10 +120,6 @@ class EnefitImport(EnefitInit):
         test_data = test_data.rename(
             columns={"prediction_datetime": "datetime"}
         )
-        test_data = pl.from_pandas(
-            test_data[self.starting_dataset_column_dict['test']], 
-            schema_overrides=self.starting_dataset_schema_dict['train']
-        )
         client_data_new = pl.from_pandas(
             client_data_new[self.starting_dataset_column_dict['client']], 
             schema_overrides=self.starting_dataset_schema_dict['client']
@@ -150,8 +146,16 @@ class EnefitImport(EnefitInit):
         )
 
         if self.inference:
+            test_data = pl.from_pandas(
+                test_data[self.starting_dataset_column_dict['test']], 
+                schema_overrides=self.starting_dataset_schema_dict['train']
+            )
             self.main_data = test_data
         else:
+            test_data = pl.from_pandas(
+                test_data[self.starting_dataset_column_dict['train']], 
+                schema_overrides=self.starting_dataset_schema_dict['train']
+            )
             (
                 client_data_new,
                 gas_data_new,
