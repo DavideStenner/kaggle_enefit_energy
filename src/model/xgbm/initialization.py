@@ -46,7 +46,7 @@ class XgbInit():
                 raise ValueError
             
             print('Importing best feature from lgb experiment')
-            with open('config/best_feature', "r") as file:
+            with open('config/best_feature.txt', "r") as file:
                 # Read all lines from the file into a list
                 self.importance_feature_list = [col.strip() for col in file.readlines()][:number_importance_feature]
 
