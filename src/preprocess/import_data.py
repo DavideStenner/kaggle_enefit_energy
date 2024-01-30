@@ -78,9 +78,6 @@ class EnefitImport(EnefitInit):
             test_data: pd.DataFrame
         ) -> None:
         
-        if not self.inference:
-            raise ValueError('Call begin_inference first...')
-        
         #ensure new data has correct dtype
         (
             client_data_new,
@@ -131,7 +128,17 @@ class EnefitImport(EnefitInit):
             schema_overrides=self.starting_dataset_schema_dict['target']
         )
 
-        self.main_data = test_data
+        if self.inference:
+            self.main_data = test_data
+        else:
+            self.main_data = pl.concat(
+                [self.main_data, test_data]
+            ).unique(
+                [
+                    "county", "is_business", "product_type",
+                    "is_consumption", "datetime"
+                ]
+            )
         self.starting_client_data = pl.concat(
             [self.starting_client_data, client_data_new]
         ).unique(
