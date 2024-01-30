@@ -6,6 +6,19 @@ from typing import Dict, OrderedDict, List
 from src.preprocess.initialization import EnefitInit
 
 class EnefitImport(EnefitInit):    
+    def clean_date_columns(self, dataset: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        for col in columns:
+            #datetime in int format ...
+            if all(
+                (
+                    dataset[col] == 
+                    dataset[col].astype(int).astype(str)
+                )
+            ):
+                dataset[col] = dataset[col].astype(int)
+        
+        return dataset
+    
     def set_type_new_data(
             self,
             client_data_new: pd.DataFrame,
@@ -17,6 +30,14 @@ class EnefitImport(EnefitInit):
             test_data: pd.DataFrame
     ) -> List[pd.DataFrame]:
         
+        test_data = self.clean_date_columns(dataset=test_data, columns=['prediction_datetime'])
+        target_data_new = self.clean_date_columns(dataset=target_data_new, columns=['datetime'])
+        client_data_new = self.clean_date_columns(dataset=client_data_new, columns=['date'])
+        historical_weather_data_new = self.clean_date_columns(dataset=historical_weather_data_new, columns=['datetime'])
+        forecast_weather_data_new = self.clean_date_columns(dataset=forecast_weather_data_new, columns=['origin_datetime', 'forecast_datetime'])
+        electricity_data_new = self.clean_date_columns(dataset=electricity_data_new, columns=['origin_date', 'forecast_date'])
+        gas_data_new = self.clean_date_columns(dataset=gas_data_new, columns=['origin_date', 'forecast_date'])
+
         #TEST
         test_data = test_data.astype(self.pandas_dataset_schema_dict['test'])
         test_data['prediction_datetime'] = pd.to_datetime(test_data['prediction_datetime'])
@@ -131,6 +152,23 @@ class EnefitImport(EnefitInit):
         if self.inference:
             self.main_data = test_data
         else:
+            (
+                client_data_new,
+                gas_data_new,
+                electricity_data_new,
+                forecast_weather_data_new,
+                historical_weather_data_new,
+                target_data_new,
+                test_data
+            ) = (
+                client_data_new.lazy(),
+                gas_data_new.lazy(),
+                electricity_data_new.lazy(),
+                forecast_weather_data_new.lazy(),
+                historical_weather_data_new.lazy(),
+                target_data_new.lazy(),
+                test_data.lazy()
+            )
             self.main_data = pl.concat(
                 [self.main_data, test_data]
             ).unique(
