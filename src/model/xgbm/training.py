@@ -21,7 +21,10 @@ class XgbTrainer(XgbInit):
             ]
         else:
             print(f'Using top {len(self.importance_feature_list)} feature')
-            self.feature_list = self.importance_feature_list
+            self.feature_list = (
+                self.importance_feature_list + 
+                [cat_col for cat_col in self.categorical_col_list if cat_col not in self.importance_feature_list]
+            )
         
         #save feature list locally for later
         self.save_used_feature()
