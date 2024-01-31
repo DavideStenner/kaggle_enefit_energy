@@ -28,6 +28,6 @@ if __name__=='__main__':
             experiment_name=experiment_name + "_xgb",
             params_xgb=params_model,
             config_dict=config_dict,
-            metric_eval='mae', log_evaluation=25, use_importance_filter=True
+            metric_eval='mae', log_evaluation=25, use_importance_filter=True, number_importance_feature=750
         )
         trainer.train_explain()
