@@ -35,4 +35,3 @@ class LgbmPipeline(LgbmTrainer, LgbmExplainer, LgbmInference):
         self.create_experiment_structure()
         self.run_train()
         self.explain_model()
-        # self.all_data_train(num_round=self.best_result['best_epoch'])

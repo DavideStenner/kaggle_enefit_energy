@@ -114,7 +114,6 @@ class LgbmInit():
         self.load_best_result()
         self.load_params()
         self.load_model_list()
-        # self.load_model_all_data()
         
     def save_progress_list(self) -> None:
         with open(
