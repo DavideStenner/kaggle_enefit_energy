@@ -28,7 +28,7 @@ class XgbInference(XgbInit):
         
         for model in self.model_list:
             prediction_ += model.predict(
-                xgb.DMatrix(test_data),
+                xgb.DMatrix(test_data, feature_names=self.feature_list),
                 iteration_range  = (0, self.best_result['best_epoch'])
             )/self.n_fold
             
