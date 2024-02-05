@@ -4,7 +4,7 @@ PKG_NAME = "src"
 VERSION = "1.0.0"
 
 def _read_install_requires():
-    with open('requirements.txt') as file:
+    with open('requirements_env_kaggle.txt') as file:
         requirements = file.read().splitlines()
         
     return [
